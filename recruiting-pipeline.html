@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Colburn Agency — Recruiting Pipeline</title>
+<style>
+  :root{
+    --navy:#0f294a; --navy2:#16365f; --navy3:#1d4373;
+    --gold:#c9a45f; --gold2:#e0bd78;
+    --bg:#eef1f5; --panel:#ffffff; --ink:#1c2b3a; --muted:#6b7c8f;
+    --line:#dde3ea; --good:#2e9e6b; --warn:#d98a32; --bad:#c5544c;
+    --unl:#d98a32; --lic:#2e9e6b;
+    --shadow:0 1px 3px rgba(16,40,74,.10),0 4px 14px rgba(16,40,74,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh}
+  /* Header */
+  header{background:linear-gradient(120deg,var(--navy),var(--navy3));color:#fff;padding:12px 20px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:var(--shadow);z-index:5}
+  .brand{display:flex;align-items:center;gap:11px;margin-right:auto}
+  .logo{width:38px;height:38px;border-radius:9px;background:var(--gold);color:var(--navy);
+    display:grid;place-items:center;font-weight:800;font-size:17px;letter-spacing:.5px}
+  .brand h1{font-size:16px;margin:0;font-weight:700;line-height:1.1}
+  .brand p{margin:0;font-size:11.5px;color:#b9c9dc;letter-spacing:.3px}
+  .tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .search{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;
+    border-radius:8px;padding:8px 11px;font-size:13px;width:190px;outline:none}
+  .search::placeholder{color:#aebfd2}
+  button,a.btn-ghost,a.btn-gold{font-family:inherit;cursor:pointer;border:none;border-radius:8px;font-size:13px;
+    font-weight:600;padding:8px 13px;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .btn-gold{background:var(--gold);color:var(--navy)}
+  .btn-gold:hover{background:var(--gold2)}
+  .btn-ghost{background:rgba(255,255,255,.10);color:#fff;border:1px solid rgba(255,255,255,.20)}
+  .btn-ghost:hover{background:rgba(255,255,255,.18)}
+  /* Stats */
+  .statbar{display:flex;gap:0;background:var(--panel);border-bottom:1px solid var(--line);
+    padding:0 12px;overflow-x:auto}
+  .stat{padding:9px 16px;text-align:center;border-right:1px solid var(--line);min-width:96px}
+  .stat .n{font-size:18px;font-weight:800;color:var(--navy)}
+  .stat .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
+  /* Board */
+  .board{flex:1;display:flex;gap:14px;padding:16px;overflow-x:auto;align-items:flex-start}
+  .col{background:#e6ebf1;border-radius:12px;width:268px;min-width:268px;display:flex;flex-direction:column;
+    max-height:100%;border:1px solid var(--line)}
+  .col-head{padding:11px 13px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .col-head .ttl{font-weight:700;font-size:12.5px;letter-spacing:.2px}
+  .col-head .ct{margin-left:auto;background:#fff;border:1px solid var(--line);color:var(--muted);
+    font-size:11px;font-weight:700;border-radius:20px;padding:1px 9px}
+  .cards{padding:10px;display:flex;flex-direction:column;gap:9px;overflow-y:auto;flex:1;min-height:48px}
+  .cards.drag-over{background:rgba(201,164,95,.14);outline:2px dashed var(--gold);outline-offset:-6px;border-radius:10px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+    box-shadow:var(--shadow);cursor:grab;border-left:4px solid var(--navy3)}
+  .card:active{cursor:grabbing}
+  .card.lic{border-left-color:var(--lic)} .card.unl{border-left-color:var(--unl)}
+  .card .nm{font-weight:700;font-size:13.5px;margin-bottom:3px}
+  .card .meta{font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:1px}
+  .card .badges{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.2px}
+  .b-unl{background:#fbeede;color:#9a5a18} .b-lic{background:#dff1e8;color:#1d7a4f}
+  .b-src{background:#e7edf5;color:#42597a}
+  .b-rec{background:#e9e3f6;color:#5a3fa0}
+  .lic-prog{margin-top:9px;background:#f6f8fb;border:1px solid var(--line);border-radius:8px;padding:8px 9px}
+  .lic-bar{height:7px;background:#e3e8ef;border-radius:5px;overflow:hidden}
+  .lic-bar span{display:block;height:100%;background:linear-gradient(90deg,#d98a32,#2e9e6b)}
+  .lic-row{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--navy3);margin-top:5px}
+  .lic-row.sub{font-weight:600;color:var(--muted);font-size:10.5px}
+  .lic-row.stale{color:var(--bad)}
+  .lic-done{color:var(--good)}
+  .nudge{background:#fbe9e8;color:#b23c34;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.2px}
+  .b-trk-on{background:#dff1e8;color:#1d7a4f}
+  .syncbox{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+  .syncres{margin-top:12px;font-size:12.5px}
+  .syncres .ok{color:var(--good);font-weight:700}.syncres .miss{color:var(--warn)}
+  .card .quick{display:flex;gap:6px;margin-top:9px}
+  .card .quick a{flex:1;text-align:center;text-decoration:none;font-size:11px;font-weight:700;
+    padding:5px 0;border-radius:6px;border:1px solid var(--line);color:var(--navy3);background:#f6f8fb}
+  .card .quick a:hover{background:#eef2f7}
+  .add-card{margin:0 10px 10px;background:transparent;border:1px dashed #b9c4d2;color:var(--muted);
+    width:calc(100% - 20px);justify-content:center;font-weight:600}
+  .add-card:hover{background:#fff;color:var(--navy)}
+  /* Modal */
+  .scrim{position:fixed;inset:0;background:rgba(15,41,74,.55);display:none;align-items:center;
+    justify-content:center;z-index:20;padding:20px}
+  .scrim.open{display:flex}
+  .modal{background:#fff;border-radius:14px;width:560px;max-width:100%;max-height:92vh;overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal h2{margin:0;padding:16px 20px;font-size:16px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:10px}
+  .modal h2 .x{margin-left:auto;background:#f1f4f8;color:var(--muted);border-radius:7px;
+    width:30px;height:30px;justify-content:center;padding:0;font-size:17px}
+  .mbody{padding:18px 20px}
+  .row{display:flex;gap:12px}.row>*{flex:1}
+  label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.4px;margin:12px 0 5px}
+  input,select,textarea{width:100%;font-family:inherit;font-size:13.5px;padding:9px 11px;
+    border:1px solid var(--line);border-radius:8px;outline:none;color:var(--ink);background:#fcfdfe}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,164,95,.18)}
+  textarea{resize:vertical;min-height:62px}
+  .mfoot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  .btn-navy{background:var(--navy);color:#fff}.btn-navy:hover{background:var(--navy2)}
+  .btn-del{background:#fbe9e8;color:var(--bad);margin-right:auto}.btn-del:hover{background:#f7dad8}
+  /* Comms log */
+  .log{margin-top:6px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .log-item{padding:9px 11px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .log-item:last-child{border-bottom:none}
+  .log-item .lh{display:flex;gap:8px;align-items:center;margin-bottom:2px}
+  .log-item .tg{font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;text-transform:uppercase}
+  .tg-call{background:#e7edf5;color:#42597a}.tg-text{background:#dff1e8;color:#1d7a4f}
+  .tg-email{background:#efe6f7;color:#6a3f9a}.tg-note{background:#f1f4f8;color:#6b7c8f}
+  .log-item .dt{font-size:10.5px;color:var(--muted);margin-left:auto}
+  .log-empty{padding:12px;text-align:center;color:var(--muted);font-size:12px}
+  .tmpl{background:#f6f8fb;border:1px solid var(--line);border-radius:9px;padding:11px;margin-top:6px}
+  .tmpl p{margin:0 0 8px;font-size:12px;color:var(--muted)}
+  .tmpl .tbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:7px;text-decoration:none;
+    border:1px solid var(--line);background:#fff;color:var(--navy3)}
+  .pill:hover{background:#eef2f7}
+  .hint{font-size:11.5px;color:var(--muted);background:#fff7e8;border:1px solid #f0dfb6;
+    border-radius:8px;padding:8px 11px;margin:10px 16px;display:flex;gap:8px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+  .seg button{background:#f1f4f8;color:var(--muted);font-weight:700;padding:6px 10px}
+  .seg button.on{background:var(--navy);color:#fff}
+  @media(max-width:640px){.brand p{display:none}.search{width:130px}}
+</style>
+</head>
+<body>
+<!-- Login gate -->
+<div class="scrim" id="loginScrim" style="display:none">
+  <div class="modal" style="width:380px">
+    <h2 style="border:none">Colburn Agency — Sign in</h2>
+    <div class="mbody">
+      <p style="margin:0 0 12px;color:var(--muted);font-size:13px">Recruiters sign in to view the shared pipeline. First time? Use "Create account."</p>
+      <label>Email</label><input id="li_email" type="email" placeholder="you@email.com" />
+      <label>Password</label><input id="li_pass" type="password" placeholder="At least 6 characters" />
+      <div id="li_msg" style="font-size:12.5px;margin-top:8px;min-height:16px;color:var(--muted)"></div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn-navy" style="flex:1" onclick="doLogin()">Sign in</button>
+        <button class="btn-ghost" style="flex:1;background:#eef2f7;color:var(--navy3)" onclick="doSignup()">Create account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="appwrap" style="display:none;flex-direction:column;height:100vh">
+<header>
+  <div class="brand">
+    <div class="logo">CA</div>
+    <div><h1>Recruiting Pipeline</h1><p>COLBURN AGENCY &middot; AGENT ONBOARDING</p></div>
+  </div>
+  <div class="tools">
+    <select id="recFilter" class="search" style="width:165px" onchange="setRecFilter()"></select>
+    <input id="search" class="search" placeholder="Search recruits…" oninput="render()" />
+    <button class="btn-gold" onclick="openAdd()">+ Add Recruit</button>
+    <button class="btn-ghost" onclick="openSync()">⟳ Sync Licensing</button>
+    <a class="btn-ghost" href="contracting-intake.html" target="_blank" style="text-decoration:none">Contracting Form ↗</a>
+    <a class="btn-ghost" href="onboarding.html" target="_blank" style="text-decoration:none">Onboarding ↗</a>
+    <a class="btn-ghost" href="https://agent.colburnfinancial.com" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
+    <button class="btn-ghost" onclick="exportData()">Export</button>
+    <button class="btn-ghost" onclick="document.getElementById('imp').click()">Import</button>
+    <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(event)" />
+    <span id="whoami" style="color:#cdddf0;font-size:12px;margin-left:6px"></span>
+    <button class="btn-ghost" onclick="doLogout()">Log out</button>
+  </div>
+</header>
+
+<div class="statbar" id="statbar"></div>
+<div class="hint">✅ Connected to your shared Colburn Agency database — your whole team sees the same board, live. Texts/emails still open your own messaging app with a pre-written message (automated 2-way texting comes with the A2P step).</div>
+<div class="board" id="board"></div>
+</div><!-- /appwrap -->
+
+<!-- Modal -->
+<div class="scrim" id="scrim">
+  <div class="modal">
+    <h2 id="mtitle">Recruit <button class="x" onclick="closeModal()">×</button></h2>
+    <div class="mbody">
+      <div class="row">
+        <div><label>Full name</label><input id="f_name" placeholder="Jane Smith" /></div>
+        <div><label>Phone</label><input id="f_phone" placeholder="(555) 123-4567" /></div>
+      </div>
+      <div class="row">
+        <div><label>Email</label><input id="f_email" placeholder="jane@email.com" /></div>
+        <div><label>Recruiting agent</label><select id="f_recruiter" onchange="onRecruiterChange()"></select></div>
+      </div>
+      <div class="row">
+        <div><label>Source</label><select id="f_source" onchange="onSourceChange()"></select></div>
+        <div><label>License status</label>
+          <select id="f_license"><option value="unlicensed">Unlicensed</option>
+            <option value="licensed">Already Licensed</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>Stage</label><select id="f_stage"></select></div>
+        <div></div>
+      </div>
+      <label>Notes</label>
+      <textarea id="f_notes" placeholder="Background, availability, where they are in licensing…"></textarea>
+
+      <label>Licensing progress (JustInsurance)</label>
+      <div class="row">
+        <div><label style="margin-top:0">Course %</label><input id="f_lic_pct" type="number" min="0" max="100" placeholder="0" /></div>
+        <div><label style="margin-top:0">Exam prep %</label><input id="f_lic_exam" type="number" min="0" max="100" placeholder="0" /></div>
+        <div><label style="margin-top:0">Last login</label><input id="f_lic_login" type="date" /></div>
+      </div>
+      <label style="margin-top:8px">Course / state</label>
+      <input id="f_lic_course" placeholder="e.g. Texas Life & Health Pre-license Course" />
+
+      <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:13px">
+        <input type="checkbox" id="f_tracker" style="width:18px;height:18px;accent-color:var(--gold)" />
+        <span>Agency Tracker account created — <a href="https://agent.colburnfinancial.com" target="_blank" style="color:var(--navy3);font-weight:600">agent.colburnfinancial.com</a></span>
+      </div>
+
+      <label>Communication log</label>
+      <div class="seg" id="logseg">
+        <button data-t="call" class="on">Call</button>
+        <button data-t="text">Text</button>
+        <button data-t="email">Email</button>
+        <button data-t="note">Note</button>
+      </div>
+      <div class="row" style="margin-top:7px">
+        <input id="f_logtext" placeholder="What happened? (e.g. Left voicemail about meet & greet)" style="flex:3" />
+        <button class="btn-navy" style="flex:none" onclick="addLog()">Log</button>
+      </div>
+      <div class="log" id="loglist"></div>
+
+      <div class="tmpl" id="tmplbox"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-del" id="delbtn" onclick="delRecruit()">Delete</button>
+      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeModal()">Cancel</button>
+      <button class="btn-navy" onclick="saveRecruit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sync Licensing modal -->
+<div class="scrim" id="syncscrim">
+  <div class="modal">
+    <h2>⟳ Sync Licensing from JustInsurance <button class="x" onclick="closeSync()">×</button></h2>
+    <div class="mbody">
+      <p style="margin:0 0 10px;color:var(--muted);font-size:13px">
+        Paste your daily <b>JustInsurance Training Report</b> (the per-agent table) below and click Sync.
+        Recruits are matched by <b>email</b>; their course %, exam prep %, and last login update automatically.</p>
+      <textarea id="syncbox" class="syncbox" placeholder="Paste the Training Report email text here (Date Enrolled, Last Login, % Complete, … Email, Course, Exam Prep %)"></textarea>
+      <div class="syncres" id="syncres"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3);margin-left:auto" onclick="closeSync()">Close</button>
+      <button class="btn-navy" onclick="runSync()">Sync</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ---------- Pipeline configuration ---------- */
+const STAGES = [
+  {id:'interview',    name:'Interview',             color:'#5b8fd6'},
+  {id:'meet',         name:'Meet & Greet',          color:'#8a6fc4'},
+  {id:'licensing',    name:'In Licensing',          color:'#d98a32'},   // unlicensed branch
+  {id:'exampassed',   name:'Passed Exam',           color:'#3e9bbf'},   // unlicensed branch
+  {id:'licensedagent',name:'Licensed Agent',        color:'#2e9e6b'},   // licensed branch
+  {id:'contracted',   name:'Contracted Agent',      color:'#c9a45f'},   // branches merge here
+  {id:'fasttrack',    name:'FASTTRACK · HQ',        color:'#13325b'},
+  {id:'rtw',          name:'RTW · Ready to Write',  color:'#15507a'},
+  {id:'uw',           name:'UW · Unique Writer',    color:'#2e8b8b'},
+  {id:'cw',           name:'CW · Consistent Writer',color:'#2e9e6b'},
+  {id:'hw',           name:'HW · Habitual Writer',  color:'#1d7a4f'},
+  {id:'hold',         name:'On Hold / Lost',        color:'#9aa6b3'}
+];
+/* Branch helper: which stages each license path travels (licensed skips licensing/exam; unlicensed skips licensedagent) */
+const LICENSED_SKIP=['licensing','exampassed'];
+const UNLICENSED_SKIP=['licensedagent'];
+
+/* Stage-based message templates. {{name}} is replaced with the recruit's first name. */
+const TEMPLATES = {
+  interview:{text:"Hi {{name}}, this is Mike with Colburn Agency — thanks for your interest! Looking forward to our interview. Reply here with any questions.",
+    subject:"Your interview with Colburn Agency",
+    body:"Hi {{name}},%0D%0A%0D%0AThanks for applying. I'm excited to connect at our interview and walk you through the opportunity. Let me know if you need anything beforehand.%0D%0A%0D%0A— Mike, Colburn Agency"},
+  meet:{text:"Hi {{name}}, looking forward to your Meet & Greet! We'll cover onboarding, sync you to the agency calendar, get you into Slack, and prep you for our upcoming events (Engage & Ignite). Please register for Slack ahead of time: https://join.slack.com/t/colburnagency/shared_invite/zt-2kb850491-T0SEvGGY0YsaorBA8kYoGA",
+    subject:"Your Meet & Greet — what to expect",
+    body:"Hi {{name}},%0D%0A%0D%0ALooking forward to your Meet & Greet! Here's what we'll do together:%0D%0A1) Onboarding%0D%0A2) Sync you to the agency meeting calendar%0D%0A3) Get you into our team Slack: https://join.slack.com/t/colburnagency/shared_invite/zt-2kb850491-T0SEvGGY0YsaorBA8kYoGA%0D%0A4) Prep for our upcoming events: Engage & Ignite%0D%0A%0D%0AFull onboarding steps: https://recruiting.colburnfinancial.com/onboarding.html%0D%0A%0D%0ASee you soon,%0D%0A— Mike, Colburn Agency"},
+  licensing:{text:"Hi {{name}}, your next step is getting licensed through the JustInsurance program: justinsurance.com. I'll be tracking your progress and checking in to keep you on pace — let me know if you hit any snags!",
+    subject:"Your licensing path with JustInsurance",
+    body:"Hi {{name}},%0D%0A%0D%0AYour next step is completing pre-licensing through JustInsurance (justinsurance.com). I'll be tracking your course progress and exam prep, and I'm here to help you stay on pace. Reply anytime you have questions.%0D%0A%0D%0A— Mike, Colburn Agency"},
+  exampassed:{text:"Congratulations on passing your exam, {{name}}!! Huge milestone. Next step: complete your contracting info form so we can get you contracted with Symmetry: https://recruiting.colburnfinancial.com/contracting-intake.html",
+    subject:"You passed! Now let's get you contracted",
+    body:"Hi {{name}},%0D%0A%0D%0ACongratulations on passing your licensing exam -- that's a huge milestone! Your next step is to complete your contracting info form so we can get you contracted with Symmetry:%0D%0Ahttps://recruiting.colburnfinancial.com/contracting-intake.html%0D%0A%0D%0A— Mike, Colburn Agency"},
+  licensedagent:{text:"Hi {{name}}, since you're already licensed, let's get you contracted! Please complete your contracting info form: https://recruiting.colburnfinancial.com/contracting-intake.html — reply when done and I'll walk you through the rest.",
+    subject:"Let's get you contracted with Symmetry",
+    body:"Hi {{name}},%0D%0A%0D%0ASince you're already licensed, our next step is contracting. Please complete your contracting info form:%0D%0Ahttps://recruiting.colburnfinancial.com/contracting-intake.html%0D%0A%0D%0AOnce it's in, I'll guide you through each contracting step.%0D%0A%0D%0A— Mike, Colburn Agency"},
+  contracted:{text:"Welcome to the team, {{name}}! You're contracted. I'll get your Agency Tracker account set up at agent.colburnfinancial.com and send your login — then we'll kick off FASTTRACK.",
+    subject:"You're contracted — welcome to the Colburn Agency!",
+    body:"Hi {{name}},%0D%0A%0D%0AWelcome to the team -- you're officially contracted! Next:%0D%0A1) I'll set up your Agency Tracker account at agent.colburnfinancial.com and send your login%0D%0A2) We'll start you on FASTTRACK%0D%0A%0D%0AExcited to have you on board,%0D%0A— Mike, Colburn Agency"},
+  fasttrack:{text:"{{name}}, time to kick off FASTTRACK! This is your fast path to writing your first policy. Make sure you're logged into your Agency Tracker (agent.colburnfinancial.com) — let's go!",
+    subject:"Your FASTTRACK kickoff",
+    body:"Hi {{name}},%0D%0A%0D%0AWelcome to FASTTRACK -- your accelerated path to writing your first policy. Make sure you're set up in your Agency Tracker (agent.colburnfinancial.com). Let's get you to Ready to Write!%0D%0A%0D%0A— Mike, Colburn Agency"},
+  rtw:{text:"Congrats {{name}} — you're Ready to Write! Let's get your first application submitted. What can I help with to write your first policy?",
+    subject:"You're Ready to Write — let's get your first app!",
+    body:"Hi {{name}},%0D%0A%0D%0AYou're officially Ready to Write! Our next milestone is your first submitted application. Let's set up time to make sure you're ready.%0D%0A%0D%0A— Mike, Colburn Agency"},
+  uw:{text:"{{name}}, congrats on submitting your first application — you're officially a Unique Writer! Let's build momentum toward Consistent Writer. Proud of you!",
+    subject:"First app submitted — you're a Unique Writer!",
+    body:"Hi {{name}},%0D%0A%0D%0AHuge congrats on your first submitted application — you're officially a Unique Writer! Let's keep the momentum going toward Consistent Writer status.%0D%0A%0D%0A— Mike, Colburn Agency"},
+  cw:{text:"{{name}}, you're writing consistently — love to see it! Let's lock in the habits that take you to Habitual Writer. Keep being the constant!",
+    subject:"You're a Consistent Writer — keep it going!",
+    body:"Hi {{name}},%0D%0A%0D%0AYou've become a Consistent Writer -- exactly the steady action that builds a career here. Let's lock in the habits that make you a Habitual Writer.%0D%0A%0D%0A— Mike, Colburn Agency"},
+  hw:{text:"{{name}}, you've made writing a habit — Habitual Writer status! This is where careers are built. Let's talk next goals and building your own team.",
+    subject:"Habitual Writer — this is where it's built!",
+    body:"Hi {{name}},%0D%0A%0D%0AYou've reached Habitual Writer -- writing is now a habit, and that's where real careers are built. Let's talk next goals, including building your own team.%0D%0A%0D%0A— Mike, Colburn Agency"},
+  hold:{text:"Hi {{name}}, checking back in — are you still interested in moving forward with Colburn Agency? Happy to pick up wherever we left off.",
+    subject:"Checking in — still interested?",
+    body:"Hi {{name}},%0D%0A%0D%0AJust checking back in. Are you still interested in moving forward? Happy to pick up where we left off.%0D%0A%0D%0A— Mike, Colburn Agency"}
+};
+
+/* Editable lists. New entries added in the app are saved automatically. */
+const DEFAULT_SOURCES=['Craigslist','Spark Recruiting','LinkedIn','Warm Market','WallStreetJobs','Indeed','Landing Page','Referral','Other'];
+const DEFAULT_RECRUITERS=['Mike Colburn','Jennifer Colburn'];
+
+/* ---------- State + Supabase (shared database) ---------- */
+const SUPA_URL='https://vrtnbucwukxdkiisndnk.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZydG5idWN3dWt4ZGtpaXNuZG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjQ5MTcsImV4cCI6MjA5NzkwMDkxN30.hjdRPeWHvTT27sCIZMhfgLuuntPloDoK8Cm2EPRFl2w';
+const SB=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+
+const SKEY='cf_sources_v1', RKEY='cf_recruiters_v1';
+let DATA=[];
+let SOURCES=loadList(SKEY,DEFAULT_SOURCES);
+let RECRUITERS=loadList(RKEY,DEFAULT_RECRUITERS);
+let editingId=null, logType='call', filterRecruiter='';
+function loadList(k,def){try{const r=JSON.parse(localStorage.getItem(k));if(Array.isArray(r)&&r.length)return r;}catch(e){}return def.slice();}
+function saveList(k,list){localStorage.setItem(k,JSON.stringify(list));}
+function save(){}  /* the database is the source of truth now */
+
+/* Map between the database row and the in-app recruit object */
+const nz=v=>(v===''||v===undefined?null:v);
+function fromRow(r){return {id:r.id,name:r.name,phone:r.phone||'',email:r.email||'',source:r.source||'',
+  recruiter:r.recruiter_name||'',license:r.license_status||'unlicensed',stage:r.stage||'interview',
+  tracker:!!r.tracker_created,notes:r.notes||'',
+  licensing:(r.course_pct!=null||r.exam_prep_pct!=null||r.lic_course||r.lic_last_login)?
+    {pct:r.course_pct,exam:r.exam_prep_pct,lastLogin:r.lic_last_login||'',course:r.lic_course||'',
+     enrolled:r.lic_enrolled_at||'',completed:r.lic_completed_at||''}:null,
+  log:Array.isArray(r.log)?r.log:[],
+  created:r.created_at?+new Date(r.created_at):Date.now(),
+  last:r.last_contact_at?+new Date(r.last_contact_at):null};}
+function toRow(rec){const L=rec.licensing||null;return {
+  name:rec.name,phone:nz(rec.phone),email:nz(rec.email),source:nz(rec.source),
+  recruiter_name:nz(rec.recruiter),license_status:rec.license||'unlicensed',stage:rec.stage,
+  tracker_created:!!rec.tracker,notes:nz(rec.notes),
+  course_pct:L&&L.pct!==''?L.pct:null,exam_prep_pct:L&&L.exam!==''?L.exam:null,
+  lic_last_login:L&&L.lastLogin?L.lastLogin:null,lic_course:L?nz(L.course):null,
+  lic_enrolled_at:L&&L.enrolled?L.enrolled:null,lic_completed_at:L&&L.completed?L.completed:null,
+  lic_updated_at:L?new Date().toISOString():null,
+  log:rec.log||[],last_contact_at:rec.last?new Date(rec.last).toISOString():null};}
+async function loadDB(){
+  const {data,error}=await SB.from('recruits').select('*').order('created_at',{ascending:true});
+  if(error){alert('Could not load recruits: '+error.message);return;}
+  DATA=(data||[]).map(fromRow);render();
+}
+/* Fire a recruiter Slack alert (non-blocking — never interrupts the user if Slack is down) */
+async function notifySlack(event,recruit,stage){
+  try{ await SB.functions.invoke('notify-slack',{body:{event,
+    recruit:{name:recruit.name,recruiter:recruit.recruiter,source:recruit.source},stage}}); }
+  catch(e){ console.warn('Slack notify skipped',e); }
+}
+function uid(){return 'r'+Date.now()+Math.floor(Math.random()*1000);}
+function seed(){
+  const now=Date.now(), day=864e5;
+  return [
+    {id:uid(),name:'Marcus Lee',phone:'5551112222',email:'marcus@email.com',source:'Craigslist',recruiter:'Mike Colburn',license:'unlicensed',stage:'interview',notes:'Found us via overview.colburnfinancial.com',created:now,last:now,log:[{t:'note',x:'Booked interview via Calendly',d:now}]},
+    {id:uid(),name:'Tanya Brooks',phone:'5553334444',email:'tanya@email.com',source:'Spark Recruiting',recruiter:'Jennifer Colburn',license:'unlicensed',stage:'licensing',notes:'Enrolling in justinsurance.com this week',created:now-3*day,last:now-day,log:[{t:'call',x:'Walked her through licensing steps',d:now-day}],licensing:{pct:21.74,exam:0,lastLogin:new Date(now-15*day).toISOString().slice(0,10),course:'Utah Life & Health Pre-license Course',enrolled:'2026-03-28',completed:'',updated:now-day}},
+    {id:uid(),name:'Brian Cole',phone:'5552223333',email:'brian@email.com',source:'LinkedIn',recruiter:'Mike Colburn',license:'unlicensed',stage:'licensing',notes:'Flying through the course',created:now-20*day,last:now-2*day,log:[],licensing:{pct:100,exam:80,lastLogin:new Date(now-1*day).toISOString().slice(0,10),course:'Oklahoma Life Pre-license Course',enrolled:'2026-05-12',completed:'2026-06-18',updated:now-day}},
+    {id:uid(),name:'Derek Powell',phone:'5555556666',email:'derek@email.com',source:'Referral',recruiter:'Mike Colburn',license:'licensed',stage:'meet',notes:'Already licensed in TX — fast track',created:now-6*day,last:now-2*day,log:[{t:'text',x:'Confirmed meet & greet time',d:now-2*day}]},
+    {id:uid(),name:'Alicia Gomez',phone:'5557778888',email:'alicia@email.com',source:'Spark Recruiting',recruiter:'Jennifer Colburn',license:'licensed',stage:'contracted',notes:'Contracted — set up Agency Tracker',created:now-9*day,last:now-3*day,tracker:false,log:[]}
+  ];
+}
+
+/* ---------- Render ---------- */
+function firstName(n){return (n||'').trim().split(/\s+/)[0]||'there';}
+function fmtPhone(p){const d=(p||'').replace(/\D/g,'');return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:p;}
+function ago(ts){const d=Math.floor((Date.now()-ts)/864e5);if(d<=0)return'today';if(d===1)return'yesterday';if(d<7)return d+'d ago';return new Date(ts).toLocaleDateString();}
+
+function render(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const board=document.getElementById('board');board.innerHTML='';
+  STAGES.forEach(st=>{
+    const list=DATA.filter(r=>r.stage===st.id &&
+      (!filterRecruiter || (r.recruiter||'')===filterRecruiter) &&
+      (!q || (r.name+r.phone+r.email+r.source+(r.recruiter||'')+r.notes).toLowerCase().includes(q)));
+    const col=document.createElement('div');col.className='col';
+    col.innerHTML=`<div class="col-head"><span class="dot" style="background:${st.color}"></span>
+      <span class="ttl">${st.name}</span><span class="ct">${list.length}</span></div>
+      <div class="cards" data-stage="${st.id}"></div>
+      <button class="add-card" onclick="openAdd('${st.id}')">+ Add</button>`;
+    const cards=col.querySelector('.cards');
+    cards.addEventListener('dragover',e=>{e.preventDefault();cards.classList.add('drag-over');});
+    cards.addEventListener('dragleave',()=>cards.classList.remove('drag-over'));
+    cards.addEventListener('drop',e=>{e.preventDefault();cards.classList.remove('drag-over');
+      const id=e.dataTransfer.getData('id');moveTo(id,st.id);});
+    list.forEach(r=>cards.appendChild(cardEl(r)));
+    board.appendChild(col);
+  });
+  renderStats();save();
+}
+function cardEl(r){
+  const el=document.createElement('div');
+  el.className='card '+(r.license==='licensed'?'lic':'unl');
+  el.draggable=true;
+  el.addEventListener('dragstart',e=>e.dataTransfer.setData('id',r.id));
+  el.onclick=()=>openEdit(r.id);
+  const tel=(r.phone||'').replace(/\D/g,'');
+  el.innerHTML=`<div class="nm">${esc(r.name)}</div>
+    <div class="meta">
+      <span>${r.phone?fmtPhone(r.phone):'<i>no phone</i>'}</span>
+      <span>Last contact: ${r.last?ago(r.last):'—'}</span>
+    </div>
+    <div class="badges">
+      <span class="badge b-rec">👤 ${esc(r.recruiter||'Unassigned')}</span>
+      <span class="badge ${r.license==='licensed'?'b-lic':'b-unl'}">${r.license==='licensed'?'Licensed':'Unlicensed'}</span>
+      <span class="badge b-src">${esc(r.source)}</span>
+      ${needsNudge(r)?'<span class="nudge">⚠ Needs a nudge</span>':''}
+      ${['contracted','fasttrack','rtw','uw','cw','hw'].includes(r.stage)?(r.tracker?'<span class="badge b-trk-on">✓ Tracker</span>':'<span class="nudge">⚠ Set up Tracker</span>'):''}
+    </div>
+    ${licBlock(r)}
+    <div class="quick" onclick="event.stopPropagation()">
+      ${tel?`<a href="tel:${tel}">Call</a><a href="${smsLink(r)}">Text</a>`:''}
+      ${r.email?`<a href="${mailLink(r)}">Email</a>`:''}
+    </div>`;
+  return el;
+}
+function renderStats(){
+  const sb=document.getElementById('statbar');
+  const active=DATA.filter(r=>!['fasttrack','rtw','uw','cw','hw','hold'].includes(r.stage)).length;
+  const writers=DATA.filter(r=>['fasttrack','rtw','uw','cw','hw'].includes(r.stage)).length;
+  let html=`<div class="stat"><div class="n">${DATA.length}</div><div class="l">Total</div></div>
+    <div class="stat"><div class="n">${active}</div><div class="l">In Onboarding</div></div>
+    <div class="stat"><div class="n">${writers}</div><div class="l">Writers (HQ)</div></div>`;
+  STAGES.forEach(st=>{const c=DATA.filter(r=>r.stage===st.id).length;
+    html+=`<div class="stat"><div class="n">${c}</div><div class="l">${st.name}</div></div>`;});
+  sb.innerHTML=html;
+}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- Licensing (JustInsurance) ---------- */
+function daysSince(d){if(!d)return null;const t=new Date(d);if(isNaN(t))return null;return Math.floor((Date.now()-t)/864e5);}
+function needsNudge(r){if(r.stage!=='licensing'||!r.licensing)return false;
+  const L=r.licensing,dl=daysSince(L.lastLogin);
+  return (dl!==null&&dl>10)|| (L.pct<100 && daysSince(L.enrolled)>30);}
+function licBlock(r){
+  if(r.stage!=='licensing'||!r.licensing)return '';
+  const L=r.licensing,pct=Math.round(L.pct||0),dl=daysSince(L.lastLogin),stale=dl!==null&&dl>10;
+  return `<div class="lic-prog">
+    <div class="lic-bar"><span style="width:${pct}%"></span></div>
+    <div class="lic-row"><span>Course ${pct}%</span><span>Exam prep ${Math.round(L.exam||0)}%</span></div>
+    ${L.course?`<div class="lic-row sub">${esc(L.course)}</div>`:''}
+    ${L.completed?`<div class="lic-row sub lic-done">✓ Completed ${esc(L.completed)}</div>`
+      :dl!==null?`<div class="lic-row sub ${stale?'stale':''}">Last login: ${dl}d ago${stale?' · encourage them!':''}</div>`:''}
+  </div>`;
+}
+function openSync(){document.getElementById('syncscrim').classList.add('open');
+  document.getElementById('syncbox').value='';document.getElementById('syncres').innerHTML='';}
+function closeSync(){document.getElementById('syncscrim').classList.remove('open');}
+function toISO(d){const t=new Date(d);return isNaN(t)?'':t.toISOString().slice(0,10);}
+function parseJI(text){
+  const re=/(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+([\d.]+)%\s+(?:(\d{1,2}\/\d{1,2}\/\d{4})\s+)?([A-Za-z'.\-]+)\s+([A-Za-z'.\-]+)\s+(\+?\d{10,})\s+(\S+@\S+)\s+([\s\S]+?)\s+([\d.]+)%(?=\s|$)/g;
+  const out=[];let m;
+  while((m=re.exec(text))){out.push({enrolled:toISO(m[1]),lastLogin:toISO(m[2]),pct:parseFloat(m[3]),
+    completed:m[4]?toISO(m[4]):'',first:m[5],last:m[6],phone:m[7],email:m[8].toLowerCase(),
+    course:m[9].replace(/\s+/g,' ').trim(),exam:parseFloat(m[10])});}
+  return out;
+}
+async function runSync(){
+  const rows=parseJI(document.getElementById('syncbox').value);
+  if(!rows.length){document.getElementById('syncres').innerHTML=
+    '<span class="miss">No agent rows found. Paste the full Training Report (the per-agent table).</span>';return;}
+  let matched=0;const missing=[];
+  for(const row of rows){
+    const r=DATA.find(x=>(x.email||'').toLowerCase()===row.email);
+    if(r){const prevStage=r.stage;
+      r.licensing={pct:row.pct,exam:row.exam,lastLogin:row.lastLogin,course:row.course,
+      enrolled:row.enrolled,completed:row.completed,updated:Date.now()};
+      if(r.license==='unlicensed'&&['interview','meet','licensing','exampassed'].includes(r.stage))r.stage=row.completed?'exampassed':'licensing';
+      await SB.from('recruits').update(toRow(r)).eq('id',r.id);
+      if(r.stage!==prevStage)notifySlack('stage',r,r.stage);
+      matched++;}
+    else missing.push(row.first+' '+row.last+' ('+row.email+')');
+  }
+  render();
+  document.getElementById('syncres').innerHTML=
+    `<span class="ok">✓ Updated ${matched} recruit${matched===1?'':'s'} from ${rows.length} report rows.</span>`+
+    (missing.length?`<br><span class="miss">${missing.length} not in pipeline yet — add them as recruits:</span><br>${missing.map(esc).join('<br>')}`:'');
+}
+
+/* ---------- Message links ---------- */
+function smsLink(r){const t=TEMPLATES[r.stage]||TEMPLATES.interview;
+  const msg=t.text.replace(/{{name}}/g,firstName(r.name));
+  return `sms:${(r.phone||'').replace(/\D/g,'')}?&body=${encodeURIComponent(msg)}`;}
+function mailLink(r){const t=TEMPLATES[r.stage]||TEMPLATES.interview;
+  const sub=t.subject.replace(/{{name}}/g,firstName(r.name));
+  const body=t.body.replace(/{{name}}/g,firstName(r.name));
+  return `mailto:${r.email}?subject=${encodeURIComponent(sub)}&body=${body}`;}
+
+/* ---------- Lists (sources, recruiters) ---------- */
+function fillSelect(el,list,val){
+  el.innerHTML=list.map(o=>`<option>${esc(o)}</option>`).join('')
+    +'<option value="__add__">➕ Add new…</option>';
+  if(val&&!list.includes(val)){el.insertAdjacentHTML('afterbegin',`<option>${esc(val)}</option>`);}
+  el.value=val||list[0];
+}
+function onSourceChange(){const el=document.getElementById('f_source');
+  if(el.value==='__add__'){const n=(prompt('New source name (e.g. LinkedIn, Warm Market, WallStreetJobs):')||'').trim();
+    if(n&&!SOURCES.includes(n)){SOURCES.push(n);saveList(SKEY,SOURCES);}
+    fillSelect(el,SOURCES,n||SOURCES[0]);}}
+function onRecruiterChange(){const el=document.getElementById('f_recruiter');
+  if(el.value==='__add__'){const n=(prompt('New recruiting agent name:')||'').trim();
+    if(n&&!RECRUITERS.includes(n)){RECRUITERS.push(n);saveList(RKEY,RECRUITERS);populateRecFilter();}
+    fillSelect(el,RECRUITERS,n||RECRUITERS[0]);}}
+function populateRecFilter(){const el=document.getElementById('recFilter');
+  el.innerHTML='<option value="">All agents</option>'+RECRUITERS.map(r=>`<option>${esc(r)}</option>`).join('');
+  el.value=filterRecruiter;}
+function setRecFilter(){filterRecruiter=document.getElementById('recFilter').value;render();}
+
+/* ---------- Modal ---------- */
+function fillStageSelect(){const s=document.getElementById('f_stage');
+  s.innerHTML=STAGES.map(st=>`<option value="${st.id}">${st.name}</option>`).join('');}
+function openAdd(stage){
+  editingId=null;fillStageSelect();
+  document.getElementById('mtitle').firstChild.textContent='Add Recruit ';
+  document.getElementById('delbtn').style.display='none';
+  f('name','');f('phone','');f('email','');
+  fillSelect(document.getElementById('f_source'),SOURCES,SOURCES[0]);
+  fillSelect(document.getElementById('f_recruiter'),RECRUITERS,filterRecruiter||RECRUITERS[0]);
+  document.getElementById('f_license').value='unlicensed';
+  document.getElementById('f_stage').value=stage||'interview';
+  f('notes','');
+  ['lic_pct','lic_exam','lic_login','lic_course'].forEach(k=>document.getElementById('f_'+k).value='');
+  document.getElementById('f_tracker').checked=false;
+  tmpLog=[];renderLog();renderTmpl(stage||'interview');
+  document.getElementById('scrim').classList.add('open');
+}
+let tmpLog=[];
+function openEdit(id){
+  const r=DATA.find(x=>x.id===id);if(!r)return;
+  editingId=id;fillStageSelect();
+  document.getElementById('mtitle').firstChild.textContent='Edit Recruit ';
+  document.getElementById('delbtn').style.display='';
+  f('name',r.name);f('phone',r.phone);f('email',r.email);
+  fillSelect(document.getElementById('f_source'),SOURCES,r.source||'Other');
+  fillSelect(document.getElementById('f_recruiter'),RECRUITERS,r.recruiter||'Unassigned');
+  document.getElementById('f_license').value=r.license||'unlicensed';
+  document.getElementById('f_stage').value=r.stage;
+  f('notes',r.notes);
+  const L=r.licensing||{};
+  document.getElementById('f_lic_pct').value=(L.pct!=null?L.pct:'');
+  document.getElementById('f_lic_exam').value=(L.exam!=null?L.exam:'');
+  document.getElementById('f_lic_login').value=L.lastLogin||'';
+  document.getElementById('f_lic_course').value=L.course||'';
+  document.getElementById('f_tracker').checked=!!r.tracker;
+  tmpLog=(r.log||[]).slice();renderLog();renderTmpl(r.stage);
+  document.getElementById('f_stage').onchange=()=>renderTmpl(document.getElementById('f_stage').value);
+  document.getElementById('scrim').classList.add('open');
+}
+function renderTmpl(stage){
+  const t=TEMPLATES[stage]||TEMPLATES.interview;
+  const nm=firstName(document.getElementById('f_name').value||'there');
+  document.getElementById('tmplbox').innerHTML=
+    `<p>📨 <b>${STAGES.find(s=>s.id===stage).name}</b> message template (opens your messaging app):</p>
+     <div class="tbtns">
+       <span class="pill" style="cursor:default;background:#fff">"${esc(t.text.replace(/{{name}}/g,nm)).slice(0,70)}…"</span>
+     </div>`;
+}
+function f(id,v){document.getElementById('f_'+id).value=v||'';}
+function closeModal(){document.getElementById('scrim').classList.remove('open');}
+document.getElementById('logseg').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  logType=e.target.dataset.t;
+  [...document.getElementById('logseg').children].forEach(b=>b.classList.toggle('on',b===e.target));
+});
+function addLog(){const x=document.getElementById('f_logtext').value.trim();if(!x)return;
+  tmpLog.unshift({t:logType,x,d:Date.now()});document.getElementById('f_logtext').value='';renderLog();}
+function renderLog(){
+  const el=document.getElementById('loglist');
+  if(!tmpLog.length){el.innerHTML='<div class="log-empty">No contact logged yet</div>';return;}
+  el.innerHTML=tmpLog.map(l=>`<div class="log-item"><div class="lh">
+    <span class="tg tg-${l.t}">${l.t}</span><span class="dt">${new Date(l.d).toLocaleString()}</span></div>
+    <div>${esc(l.x)}</div></div>`).join('');
+}
+async function saveRecruit(){
+  const name=document.getElementById('f_name').value.trim();
+  if(!name){alert('Please enter a name.');return;}
+  const lp=document.getElementById('f_lic_pct').value, le=document.getElementById('f_lic_exam').value;
+  const ll=document.getElementById('f_lic_login').value, lc=document.getElementById('f_lic_course').value.trim();
+  let licensing=null;
+  if(lp!==''||le!==''||ll||lc){
+    const prev=(editingId?((DATA.find(x=>x.id===editingId)||{}).licensing||{}):{});
+    licensing={pct:lp!==''?parseFloat(lp):(prev.pct||0),exam:le!==''?parseFloat(le):(prev.exam||0),
+      lastLogin:ll||prev.lastLogin||'',course:lc||prev.course||'',
+      enrolled:prev.enrolled||'',completed:prev.completed||'',updated:Date.now()};
+  }
+  const rec={name,licensing,tracker:document.getElementById('f_tracker').checked,
+    phone:document.getElementById('f_phone').value.trim(),
+    email:document.getElementById('f_email').value.trim(),
+    source:document.getElementById('f_source').value,
+    recruiter:document.getElementById('f_recruiter').value,
+    license:document.getElementById('f_license').value,
+    stage:document.getElementById('f_stage').value,
+    notes:document.getElementById('f_notes').value.trim(),
+    log:tmpLog.slice()};
+  const prevStage=editingId?((DATA.find(x=>x.id===editingId)||{}).stage):null;
+  rec.last=tmpLog[0]?tmpLog[0].d:(editingId?((DATA.find(x=>x.id===editingId)||{}).last||Date.now()):Date.now());
+  if(editingId){
+    const {error}=await SB.from('recruits').update(toRow(rec)).eq('id',editingId);
+    if(error){alert('Save failed: '+error.message);return;}
+    const r=DATA.find(x=>x.id===editingId);Object.assign(r,rec);r.id=editingId;
+    if(rec.stage!==prevStage)notifySlack('stage',r,rec.stage);
+  } else {
+    const {data,error}=await SB.from('recruits').insert(toRow(rec)).select().single();
+    if(error){alert('Add failed: '+error.message);return;}
+    DATA.push(fromRow(data));
+    notifySlack('new',DATA[DATA.length-1]);
+  }
+  closeModal();render();
+}
+async function delRecruit(){if(editingId&&confirm('Delete this recruit?')){
+  const {error}=await SB.from('recruits').delete().eq('id',editingId);
+  if(error){alert('Delete failed: '+error.message);return;}
+  DATA=DATA.filter(x=>x.id!==editingId);closeModal();render();}}
+async function moveTo(id,stage){const r=DATA.find(x=>x.id===id);if(r&&r.stage!==stage){
+  const {error}=await SB.from('recruits').update({stage,last_contact_at:new Date().toISOString()}).eq('id',id);
+  if(error){alert('Move failed: '+error.message);return;}
+  r.stage=stage;r.last=Date.now();render();notifySlack('stage',r,stage);}}
+
+/* ---------- Import / Export ---------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='colburn-recruits-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+function importData(e){const file=e.target.files[0];if(!file)return;
+  const rd=new FileReader();rd.onload=async()=>{try{const d=JSON.parse(rd.result);
+    if(Array.isArray(d)){const {error}=await SB.from('recruits').insert(d.map(toRow));
+      if(error){alert('Import failed: '+error.message);return;}
+      await loadDB();alert('Imported '+d.length+' recruits into the shared database.');}
+    else alert('That file doesn\'t look like a recruits export.');}
+    catch(err){alert('Could not read that file.');}};rd.readAsText(file);
+  e.target.value='';}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+/* ---------- Auth ---------- */
+async function initAuth(){
+  const {data:{session}}=await SB.auth.getSession();
+  if(session) showApp(); else showLogin();
+  SB.auth.onAuthStateChange((_e,s)=>{ if(s) showApp(); else showLogin(); });
+}
+function showLogin(){
+  document.getElementById('loginScrim').style.display='flex';
+  document.getElementById('appwrap').style.display='none';
+}
+async function showApp(){
+  document.getElementById('loginScrim').style.display='none';
+  document.getElementById('appwrap').style.display='flex';
+  try{const {data:{user}}=await SB.auth.getUser(); document.getElementById('whoami').textContent=user?user.email:'';}catch(e){}
+  await loadDB();
+}
+async function doLogin(){
+  const email=document.getElementById('li_email').value.trim();
+  const password=document.getElementById('li_pass').value;
+  const msg=document.getElementById('li_msg'); msg.style.color='var(--muted)'; msg.textContent='Signing in…';
+  const {error}=await SB.auth.signInWithPassword({email,password});
+  if(error){msg.style.color='var(--bad)';msg.textContent=error.message;}
+}
+async functi

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Colburn Agency — Agent Onboarding</title>
+<style>
+  :root{
+    --navy:#0f294a;--navy2:#16365f;--navy3:#1d4373;--gold:#c9a45f;--gold2:#e0bd78;
+    --bg:#eef1f5;--panel:#fff;--ink:#1c2b3a;--muted:#6b7c8f;--line:#dde3ea;
+    --good:#2e9e6b;--shadow:0 1px 3px rgba(16,40,74,.10),0 6px 20px rgba(16,40,74,.07);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55}
+  .wrap{max-width:780px;margin:0 auto;padding:0 16px 60px}
+  header{background:linear-gradient(135deg,#0f294a 0%,#2d5a87 100%);color:#fff;text-align:center;
+    padding:38px 22px 30px;border-radius:0 0 18px 18px}
+  .logo{width:58px;height:58px;border-radius:13px;background:var(--gold);color:var(--navy);
+    display:inline-grid;place-items:center;font-weight:800;font-size:24px;margin-bottom:14px}
+  header .eyebrow{color:var(--gold2);font-size:12.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+  header h1{margin:6px 0 8px;font-size:27px;font-weight:800}
+  header p{margin:0 auto;max-width:540px;color:#cdddf0;font-size:14.5px}
+  .topnav{position:sticky;top:0;z-index:20;background:#0c2240;display:flex;align-items:center;gap:14px;padding:9px 18px;box-shadow:0 2px 8px rgba(16,40,74,.18)}
+  .topnav .nb-brand{display:flex;align-items:center;gap:9px;color:#fff;text-decoration:none;font-weight:800;font-size:15px;margin-right:auto}
+  .topnav .nb-logo{width:29px;height:29px;border-radius:8px;background:var(--gold);color:var(--navy);display:grid;place-items:center;font-weight:800;font-size:13px}
+  .topnav .nb-links{display:flex;gap:6px}
+  .topnav .nb-links a{color:#cdddf0;text-decoration:none;font-size:13px;font-weight:600;padding:7px 13px;border-radius:8px}
+  .topnav .nb-links a:hover{background:rgba(255,255,255,.10);color:#fff}
+  .topnav .nb-links a.active{background:var(--gold);color:var(--navy)}
+  .progress-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    padding:16px 20px;margin:22px 0;display:flex;align-items:center;gap:16px}
+  .progress-wrap .pct{font-size:30px;font-weight:800;color:var(--navy);min-width:62px}
+  .progress-wrap .barwrap{flex:1}
+  .progress-wrap .lbl{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
+  .bar{height:11px;background:#e3e8ef;border-radius:7px;overflow:hidden}
+  .bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--good));transition:width .4s}
+  .intro{font-size:15px;color:#3a4a5b;margin:4px 4px 18px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    padding:18px 20px;margin:14px 0;display:flex;gap:16px;align-items:flex-start}
+  .step.done{border-color:#bfe3cf;background:#fbfefc}
+  .check{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);flex:none;cursor:pointer;
+    display:grid;place-items:center;font-size:16px;color:transparent;margin-top:2px;transition:.15s;background:#fff}
+  .step.done .check{background:var(--good);border-color:var(--good);color:#fff}
+  .step .n{font-size:11px;font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase}
+  .step h3{margin:2px 0 5px;font-size:17px;color:var(--navy)}
+  .step p{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+  .step a.go{display:inline-flex;align-items:center;gap:7px;text-decoration:none;background:var(--navy);color:#fff;
+    font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:9px}
+  .step a.go:hover{background:var(--navy2)}
+  .step .req{display:inline-block;margin-left:9px;font-size:10.5px;font-weight:800;color:#9a5a18;
+    background:#fbeede;padding:2px 8px;border-radius:20px;vertical-align:middle}
+  .cta{background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border-radius:16px;
+    padding:26px;text-align:center;margin:26px 0 10px}
+  .cta h2{margin:0 0 8px;font-size:20px}
+  .cta p{margin:0 auto 16px;max-width:460px;color:#cdddf0;font-size:14px}
+  .cta a{display:inline-block;text-decoration:none;background:var(--gold);color:var(--navy);font-weight:800;
+    font-size:15px;padding:13px 26px;border-radius:11px}
+  .cta a:hover{background:var(--gold2)}
+  .values{margin-top:30px}
+  .values h2{text-align:center;font-size:18px;color:var(--navy);margin-bottom:4px}
+  .values .vsub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
+  .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .val{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .val h4{margin:0 0 5px;font-size:14.5px;color:var(--navy)}
+  .val p{margin:0;font-size:12.8px;color:var(--muted)}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:22px 10px 0}
+  @media(max-width:560px){.vgrid{grid-template-columns:1fr}header h1{font-size:23px}}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a class="nb-brand" href="onboarding.html"><span class="nb-logo">CA</span> Colburn Agency</a>
+  <div class="nb-links">
+    <a href="onboarding.html" class="active">Onboarding</a>
+    <a href="contracting-intake.html">Contracting</a>
+  </div>
+</nav>
+<header>
+  <div class="logo">CA</div>
+  <div class="eyebrow">Welcome to the team</div>
+  <h1>Your Onboarding Checklist</h1>
+  <p>Five quick steps to get you fully plugged in. Check each one off as you go — let's get you started fast.</p>
+</header>
+<div class="wrap">
+
+  <div class="progress-wrap">
+    <div class="pct" id="pct">0%</div>
+    <div class="barwrap">
+      <div class="lbl" id="plabel">0 of 5 steps complete</div>
+      <div class="bar"><span id="bar"></span></div>
+    </div>
+  </div>
+
+  <p class="intro">Welcome to the <b>Colburn Agency</b>. We lead with one simple belief: <i>relationships matter, people come first.</i> These steps connect you to the team, the calendar, and the tools we run on. Knock them out and you're ready to go.</p>
+
+  <div class="step" data-step="corevalues">
+    <div class="check" onclick="toggle('corevalues')">✓</div>
+    <div>
+      <div class="n">Step 1</div>
+      <h3>Download our Core Values</h3>
+      <p>Understand the values that shape our culture, leadership, and approach to success.</p>
+      <a class="go" href="https://agent.colburnfinancial.com/wp-content/uploads/2020/09/Core-Values-One-Pager.pdf" target="_blank" onclick="markDone('corevalues')">Download Core Values →</a>
+    </div>
+  </div>
+
+  <div class="step" data-step="calendar">
+    <div class="check" onclick="toggle('calendar')">✓</div>
+    <div>
+      <div class="n">Step 2</div>
+      <h3>Sync the Agency Calendar</h3>
+      <p>Stay on top of training calls, events, and important meetings by syncing our calendar to yours.</p>
+      <a class="go" href="https://calendar.google.com/calendar/embed?src=8qgi3jrt0h0gqbq28of3mca1og%40group.calendar.google.com&ctz=America%2FChicago" target="_blank" onclick="markDone('calendar')">Open the Calendar →</a>
+    </div>
+  </div>
+
+  <div class="step" data-step="slack">
+    <div class="check" onclick="toggle('slack')">✓</div>
+    <div>
+      <div class="n">Step 3 <span class="req">Required</span></div>
+      <h3>Join the Slack Community</h3>
+      <p>This is where the team lives — updates, support, and real-time chat with your mentors. Don't skip this one.</p>
+      <a class="go" href="https://join.slack.com/t/colburnagency/shared_invite/zt-2kb850491-T0SEvGGY0YsaorBA8kYoGA" target="_blank" onclick="markDone('slack')">Register for Slack →</a>
+    </div>
+  </div>
+
+  <div class="step" data-step="zoom">
+    <div class="check" onclick="toggle('zoom')">✓</div>
+    <div>
+      <div class="n">Step 4</div>
+      <h3>Set Up Your Zoom Account</h3>
+      <p>Our business runs on Zoom. Get set up so you can join meetings and client calls smoothly.</p>
+      <a class="go" href="https://zoom.us" target="_blank" onclick="markDone('zoom')">Set Up Zoom →</a>
+    </div>
+  </div>
+
+  <div class="step" data-step="event">
+    <div class="check" onclick="toggle('event')">✓</div>
+    <div>
+      <div class="n">Step 5</div>
+      <h3>Register for Our Next Events: Engage &amp; Ignite</h3>
+      <p>Accelerate your start by attending our upcoming training and networking events.</p>
+      <a class="go" href="https://www.quilityevents.com/event/engage26/home" target="_blank" onclick="markDone('event')">Register for Engage →</a>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h2>Already contracted or ready to be?</h2>
+    <p>Complete your contracting information so we can get you set up in HQ and writing.</p>
+    <a href="contracting-intake.html">Complete Contracting Form →</a>
+  </div>
+
+  <div class="values">
+    <h2>How we operate</h2>
+    <div class="vsub">The four commitments that define life at the Colburn Agency</div>
+    <div class="vgrid">
+      <div class="val"><h4>Proud of Failure</h4><p>Failure is feedback. We lean into it, learn from it, and let it sharpen us toward success.</p></div>
+      <div class="val"><h4>Be the Constant, Not the Variable</h4><p>Success is built on steady, intentional action. We follow the system and keep our promises — consistency wins.</p></div>
+      <div class="val"><h4>Leave the Jersey in a Better Place</h4><p>Every interaction is a chance to make a difference. We uplift, serve first, and lead with integrity.</p></div>
+      <div class="val"><h4>No Skunking</h4><p>Positivity is contagious too. We speak life, focus on solutions, and protect our mindset.</p></div>
+    </div>
+  </div>
+
+  <footer>Colburn Agency &middot; Family, Community, and Leadership</footer>
+</div>
+
+<script>
+const STEPS=['corevalues','calendar','slack','zoom','event'];
+const KEY='cf_onboarding_progress';
+let done=load();
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==='object')return d;}catch(e){}return {};}
+function save(){localStorage.setItem(KEY,JSON.stringify(done));}
+function toggle(id){done[id]=!done[id];save();render();}
+function markDone(id){if(!done[id]){done[id]=true;save();render();}} // auto-check when they open the link
+function render(){
+  let n=0;
+  STEPS.forEach(id=>{
+    const el=document.querySelector(`.step[data-step="${id}"]`);
+    if(done[id]){el.classList.add('done');n++;}else el.classList.remove('done');
+  });
+  const pct=Math.round(n/STEPS.length*100);
+  document.getElementById('pct').textContent=pct+'%';
+  document.getElementById('bar').style.width=pct+'%';
+  document.getElementById('plabel').textContent=`${n} of ${STEPS.length} steps complete`+
+    (n===STEPS.length?" — you're all set! 🎉":'');
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Colburn Agency — New Agent Contracting Form</title>
+<style>
+  :root{
+    --navy:#0f294a;--navy2:#16365f;--navy3:#1d4373;--gold:#c9a45f;--gold2:#e0bd78;
+    --bg:#eef1f5;--panel:#fff;--ink:#1c2b3a;--muted:#6b7c8f;--line:#dde3ea;
+    --good:#2e9e6b;--bad:#c5544c;--shadow:0 1px 3px rgba(16,40,74,.10),0 6px 20px rgba(16,40,74,.07);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14.5px;line-height:1.5}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 60px}
+  .topnav{position:sticky;top:0;z-index:20;background:#0c2240;display:flex;align-items:center;gap:14px;padding:9px 18px;box-shadow:0 2px 8px rgba(16,40,74,.18)}
+  .topnav .nb-brand{display:flex;align-items:center;gap:9px;color:#fff;text-decoration:none;font-weight:800;font-size:15px;margin-right:auto}
+  .topnav .nb-logo{width:29px;height:29px;border-radius:8px;background:var(--gold);color:var(--navy);display:grid;place-items:center;font-weight:800;font-size:13px}
+  .topnav .nb-links{display:flex;gap:6px}
+  .topnav .nb-links a{color:#cdddf0;text-decoration:none;font-size:13px;font-weight:600;padding:7px 13px;border-radius:8px}
+  .topnav .nb-links a:hover{background:rgba(255,255,255,.10);color:#fff}
+  .topnav .nb-links a.active{background:var(--gold);color:var(--navy)}
+  header{background:linear-gradient(120deg,var(--navy),var(--navy3));color:#fff;text-align:center;
+    padding:30px 20px 34px;margin-bottom:-22px}
+  .logo{width:52px;height:52px;border-radius:12px;background:var(--gold);color:var(--navy);
+    display:inline-grid;place-items:center;font-weight:800;font-size:22px;margin-bottom:12px}
+  header h1{margin:0;font-size:23px;font-weight:800;letter-spacing:.3px}
+  header p{margin:6px 0 0;color:#bcd0e8;font-size:13.5px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    padding:22px 24px;margin:22px 0}
+  .card h2{font-size:15px;margin:0 0 4px;color:var(--navy);display:flex;align-items:center;gap:9px}
+  .card h2 .num{background:var(--navy);color:#fff;width:24px;height:24px;border-radius:50%;
+    display:grid;place-items:center;font-size:12.5px;font-weight:800;flex:none}
+  .card .sub{color:var(--muted);font-size:12.5px;margin:0 0 14px;padding-left:33px}
+  label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.4px;margin:13px 0 5px}
+  label .req{color:var(--bad)}
+  input,select{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);
+    border-radius:9px;outline:none;background:#fcfdfe;color:var(--ink)}
+  input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,164,95,.18)}
+  .row{display:flex;gap:14px;flex-wrap:wrap}.row>*{flex:1;min-width:150px}
+  .radio{display:flex;gap:10px;margin-top:6px}
+  .radio label{flex:1;text-transform:none;letter-spacing:0;font-size:14px;font-weight:600;color:var(--ink);
+    border:1px solid var(--line);border-radius:9px;padding:11px;text-align:center;cursor:pointer;margin:0;background:#fcfdfe}
+  .radio input{display:none}
+  .radio input:checked+span{color:var(--navy)}
+  .radio label:has(input:checked){border-color:var(--gold);background:#fdf8ee;box-shadow:0 0 0 2px rgba(201,164,95,.2)}
+  .secnote{background:#fff7e8;border:1px solid #f0dfb6;border-radius:10px;padding:12px 14px;font-size:12.8px;
+    color:#7a5a16;display:flex;gap:9px;margin-top:4px}
+  .steps{list-style:none;padding:0;margin:6px 0 0}
+  .step{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:none}
+  .step input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--gold)}
+  .step .t{flex:1}.step .t b{display:block;font-size:13.5px}.step .t span{font-size:12px;color:var(--muted)}
+  .step a{text-decoration:none;font-size:12.5px;font-weight:700;color:#fff;background:var(--navy3);
+    padding:7px 13px;border-radius:8px;white-space:nowrap}
+  .step a:hover{background:var(--navy2)}
+  .ack{display:flex;gap:10px;align-items:flex-start;font-size:13px;margin-top:6px}
+  .ack input{width:20px;height:20px;margin-top:1px;accent-color:var(--gold)}
+  .submit{width:100%;background:var(--gold);color:var(--navy);font-size:16px;font-weight:800;border:none;
+    border-radius:11px;padding:15px;cursor:pointer;margin-top:6px}
+  .submit:hover{background:var(--gold2)}
+  .done{display:none;text-align:center;padding:30px 10px}
+  .done.show{display:block}
+  .done .ic{width:64px;height:64px;border-radius:50%;background:#dff1e8;color:var(--good);
+    display:inline-grid;place-items:center;font-size:34px;margin-bottom:10px}
+  .done h2{color:var(--navy);margin:0 0 6px}
+  .done .btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .done a,.done button{text-decoration:none;font-weight:700;font-size:14px;padding:12px 18px;border-radius:10px;
+    border:none;cursor:pointer}
+  .pri{background:var(--navy);color:#fff}.sec{background:#eef2f7;color:var(--navy3)}
+  .err{color:var(--bad);font-size:12px;margin-top:4px;display:none}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:10px}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a class="nb-brand" href="onboarding.html"><span class="nb-logo">CA</span> Colburn Agency</a>
+  <div class="nb-links">
+    <a href="onboarding.html">Onboarding</a>
+    <a href="contracting-intake.html" class="active">Contracting</a>
+  </div>
+</nav>
+<header>
+  <div class="logo">CA</div>
+  <h1>New Agent Contracting Form</h1>
+  <p>COLBURN AGENCY &middot; Welcome to the team — let's get you set up</p>
+</header>
+<div class="wrap">
+  <form id="form">
+
+  <div class="card">
+    <h2><span class="num">1</span> Your information</h2>
+    <p class="sub">Use your full legal name as it appears on your government ID.</p>
+    <div class="row">
+      <div><label>Legal first name <span class="req">*</span></label><input data-req name="First name" /></div>
+      <div><label>Middle</label><input name="Middle name" /></div>
+      <div><label>Legal last name <span class="req">*</span></label><input data-req name="Last name" /></div>
+    </div>
+    <div class="row">
+      <div><label>Preferred name</label><input name="Preferred name" placeholder="What we'll call you" /></div>
+      <div><label>Date of birth <span class="req">*</span></label><input data-req type="date" name="Date of birth" /></div>
+    </div>
+    <div class="row">
+      <div><label>Email <span class="req">*</span></label><input data-req type="email" name="Email" placeholder="you@email.com" /></div>
+      <div><label>Mobile phone <span class="req">*</span></label><input data-req type="tel" name="Mobile phone" placeholder="(555) 123-4567" /></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span> Mailing address</h2>
+    <p class="sub">Where official mail and your contracting documents should go.</p>
+    <label>Street address <span class="req">*</span></label><input data-req name="Street" />
+    <div class="row">
+      <div><label>City <span class="req">*</span></label><input data-req name="City" /></div>
+      <div style="max-width:120px"><label>State <span class="req">*</span></label><input data-req name="State" placeholder="TX" /></div>
+      <div style="max-width:140px"><label>ZIP <span class="req">*</span></label><input data-req name="ZIP" /></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span> Licensing</h2>
+    <p class="sub">This tells us whether you're ready to contract or need to complete licensing first.</p>
+    <label>Are you currently insurance licensed? <span class="req">*</span></label>
+    <div class="radio">
+      <label><input type="radio" name="Licensed" value="Yes — licensed" onchange="toggleLic(true)"><span>Yes, I'm licensed</span></label>
+      <label><input type="radio" name="Licensed" value="No — not yet licensed" onchange="toggleLic(false)"><span>Not yet</span></label>
+    </div>
+    <div id="licfields" style="display:none">
+      <div class="row">
+        <div><label>Resident license state</label><input name="Resident state" placeholder="TX" /></div>
+        <div><label>NPN (National Producer Number)</label><input name="NPN" /></div>
+      </div>
+      <label>Other states you're licensed in</label><input name="Licensed states" placeholder="e.g. TX, OK, LA" />
+    </div>
+    <div id="unlicnote" class="secnote" style="display:none">
+      📚 No problem — after this form, you'll be enrolled in the
+      <b>&nbsp;justinsurance.com&nbsp;</b> licensing program. We'll guide you to licensed, then contracted.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">4</span> Who brought you in</h2>
+    <p class="sub">So we can connect you with your recruiting agent.</p>
+    <div class="row">
+      <div><label>Recruiting agent <span class="req">*</span></label><input data-req name="Recruiting agent" placeholder="The agent who recruited you" /></div>
+      <div><label>How did you hear about us?</label>
+        <select name="Source">
+          <option>Craigslist</option><option>Spark Recruiting</option><option>LinkedIn</option>
+          <option>Warm Market</option><option>WallStreetJobs</option><option>Indeed</option>
+          <option>Referral</option><option>Other</option>
+        </select></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">5</span> Onboarding steps</h2>
+    <p class="sub">Check each off as you complete it. These get you plugged into the team.</p>
+    <ul class="steps">
+      <li class="step"><input type="checkbox" name="step_corevalues" />
+        <div class="t"><b>Download Core Values</b><span>The values that shape our culture</span></div>
+        <a href="https://agent.colburnfinancial.com/wp-content/uploads/2020/09/Core-Values-One-Pager.pdf" target="_blank">Open</a></li>
+      <li class="step"><input type="checkbox" name="step_calendar" />
+        <div class="t"><b>Sync the Agency Calendar</b><span>Training calls, events, meetings</span></div>
+        <a href="https://calendar.google.com/calendar/embed?src=8qgi3jrt0h0gqbq28of3mca1og%40group.calendar.google.com&ctz=America%2FChicago" target="_blank">Open</a></li>
+      <li class="step"><input type="checkbox" name="step_slack" />
+        <div class="t"><b>Join the Slack Community</b><span>Required — team chat &amp; support</span></div>
+        <a href="https://colburnagency.typeform.com/to/Jh44IE" target="_blank">Register</a></li>
+      <li class="step"><input type="checkbox" name="step_zoom" />
+        <div class="t"><b>Set Up Your Zoom Account</b><span>Our meetings &amp; client calls run on Zoom</span></div>
+        <a href="https://zoom.us" target="_blank">Open</a></li>
+      <li class="step"><input type="checkbox" name="step_event" />
+        <div class="t"><b>Register for the Next Event</b><span>Accelerate your start</span></div>
+        <a href="https://www.quilityevents.com/event/engage26/home" target="_blank">Register</a></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="secnote" style="background:#eef4fb;border-color:#cfe0f2;color:#274a73">
+      🔒 <span><b>Your security:</b> This form collects your contact and onboarding details only.
+      Your <b>SSN, banking, and e-signature</b> for carrier contracting are entered separately in
+      Symmetry's <b>secure contracting portal</b> — never on this page.</span>
+    </div>
+    <label class="ack"><input type="checkbox" id="ack" />
+      <span>I confirm the information above is accurate and I'm ready to begin contracting with the Colburn Agency / Symmetry Financial Group.</span></label>
+    <div class="err" id="ackerr">Please confirm to continue.</div>
+    <button type="button" class="submit" onclick="submitForm()">Submit my information</button>
+    <div class="err" id="formerr" style="text-align:center">Please fill in all required (*) fields.</div>
+  </div>
+  </form>
+
+  <div class="done" id="done">
+    <div class="ic">✓</div>
+    <h2>Thank you, <span id="dn">agent</span>!</h2>
+    <p>Your information is ready to send. Choose one — and welcome to the Colburn Agency.</p>
+    <div class="btns">
+      <a id="emailbtn" class="pri" href="#">Email it to the agency</a>
+      <button class="sec" onclick="downloadCopy()">Download a copy</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:18px">
+      (Prototype: this opens your email app with the details filled in. Phase 2 will save it straight to a secure database.)</p>
+  </div>
+</div>
+<footer>Colburn Agency &middot; New Agent Onboarding</footer>
+
+<script>
+const AGENCY_EMAIL='colburnfinancial@gmail.com'; // change to where contracting info should go
+let lastData=null;
+
+function toggleLic(isLic){
+  document.getElementById('licfields').style.display=isLic?'block':'none';
+  document.getElementById('unlicnote').style.display=isLic?'none':'flex';
+}
+function collect(){
+  const d={};
+  document.querySelectorAll('#form input[name], #form select[name]').forEach(el=>{
+    if(el.type==='radio'){if(el.checked)d[el.name]=el.value;}
+    else if(el.type==='checkbox'){d[el.name]=el.checked?'Yes':'No';}
+    else if(el.value.trim())d[el.name]=el.value.trim();
+  });
+  return d;
+}
+function submitForm(){
+  document.getElementById('formerr').style.display='none';
+  document.getElementById('ackerr').style.display='none';
+  let ok=true;
+  document.querySelectorAll('#form [data-req]').forEach(el=>{
+    if(!el.value.trim()){el.style.borderColor='var(--bad)';ok=false;}
+    else el.style.borderColor='';
+  });
+  if(!document.querySelector('input[name="Licensed"]:checked')){ok=false;}
+  if(!ok){document.getElementById('formerr').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(!document.getElementById('ack').checked){document.getElementById('ackerr').style.display='block';return;}
+
+  lastData=collect();
+  const name=(lastData['Preferred name']||lastData['First name']||'agent');
+  document.getElementById('dn').textContent=name;
+
+  // Build email
+  let lines=['NEW AGENT CONTRACTING INFORMATION','=================================',''];
+  const order=['First name','Middle name','Last name','Preferred name','Date of birth','Email','Mobile phone',
+    'Street','City','State','ZIP','Licensed','Resident state','NPN','Licensed states',
+    'Recruiting agent','Source'];
+  order.forEach(k=>{if(lastData[k])lines.push(k+': '+lastData[k]);});
+  lines.push('','Onboarding steps completed:');
+  [['step_corevalues','Core Values'],['step_calendar','Agency Calendar'],['step_slack','Slack'],
+   ['step_zoom','Zoom'],['step_event','Next Event']].forEach(([k,label])=>
+    lines.push('  ['+(lastData[k]==='Yes'?'x':' ')+'] '+label));
+  const body=lines.join('\n');
+  const subject='Contracting Info — '+(lastData['First name']||'')+' '+(lastData['Last name']||'');
+  document.getElementById('emailbtn').href=
+    'mailto:'+AGENCY_EMAIL+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+
+  document.getElementById('form').style.display='none';
+  document.getElementById('done').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function downloadCopy(){
+  if(!lastData)return;
+  const blob=new Blob([JSON.stringify(lastData,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='contracting-'+(lastData['Last name']||'agent')+'.json';a.click();
+}
+</script>
+</body>
+</html>
