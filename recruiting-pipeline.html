@@ -357,11 +357,14 @@ async function loadDB(){
   if(error){alert('Could not load recruits: '+error.message);return;}
   DATA=(data||[]).map(fromRow);render();
 }
-/* Fire a recruiter Slack alert (non-blocking — never interrupts the user if Slack is down) */
+/* Fire stage triggers: recruiter Slack alert + agent email (non-blocking — never interrupts the user) */
 async function notifySlack(event,recruit,stage){
   try{ await SB.functions.invoke('notify-slack',{body:{event,
     recruit:{name:recruit.name,recruiter:recruit.recruiter,source:recruit.source},stage}}); }
   catch(e){ console.warn('Slack notify skipped',e); }
+  try{ if(recruit.email) await SB.functions.invoke('send-email',{body:{event,
+    recruit:{name:recruit.name,email:recruit.email},stage}}); }
+  catch(e){ console.warn('Email send skipped',e); }
 }
 function uid(){return 'r'+Date.now()+Math.floor(Math.random()*1000);}
 function seed(){
@@ -670,4 +673,17 @@ async function doLogin(){
   const {error}=await SB.auth.signInWithPassword({email,password});
   if(error){msg.style.color='var(--bad)';msg.textContent=error.message;}
 }
-async functi
+async function doSignup(){
+  const email=document.getElementById('li_email').value.trim();
+  const password=document.getElementById('li_pass').value;
+  const msg=document.getElementById('li_msg'); msg.style.color='var(--muted)'; msg.textContent='Creating your account…';
+  const {error}=await SB.auth.signUp({email,password});
+  if(error){msg.style.color='var(--bad)';msg.textContent=error.message;}
+  else{msg.style.color='var(--good)';msg.textContent='Account created. If it does not log you in, check your email to confirm, then Sign in.';}
+}
+async function doLogout(){await SB.auth.signOut();}
+
+fillStageSelect();populateRecFilter();initAuth();
+</script>
+</body>
+</html>
