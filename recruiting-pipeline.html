@@ -56,9 +56,11 @@
     font-size:11px;font-weight:700;border-radius:20px;padding:1px 9px}
   .cards{padding:10px;display:flex;flex-direction:column;gap:9px;overflow-y:auto;flex:1;min-height:48px}
   .cards.drag-over{background:rgba(201,164,95,.14);outline:2px dashed var(--gold);outline-offset:-6px;border-radius:10px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+  .card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;
     box-shadow:var(--shadow);cursor:grab;border-left:4px solid var(--navy3)}
   .card:active{cursor:grabbing}
+  .email-dot{position:absolute;top:9px;right:9px;width:11px;height:11px;border-radius:50%;
+    box-shadow:0 0 0 2px #fff, 0 0 3px rgba(0,0,0,.25);cursor:help}
   .card.lic{border-left-color:var(--lic)} .card.unl{border-left-color:var(--unl)}
   .card .nm{font-weight:700;font-size:13.5px;margin-bottom:3px}
   .card .meta{font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:1px}
@@ -190,7 +192,8 @@
 </header>
 
 <div class="statbar" id="statbar"></div>
-<div class="hint">✅ Connected to your shared Colburn Agency database — your whole team sees the same board, live. Texts/emails still open your own messaging app with a pre-written message (automated 2-way texting comes with the A2P step).</div>
+<div class="hint">✅ Connected to your shared Colburn Agency database — your whole team sees the same board, live. Texts/emails still open your own messaging app with a pre-written message (automated 2-way texting comes with the A2P step).
+  <span style="margin-left:10px;white-space:nowrap">Card dot: <b style="color:#1d9d5b">●</b> email sent &nbsp; <b style="color:#e3b341">●</b> not sent yet &nbsp; <b style="color:#d9433b">●</b> send failed</span></div>
 <div class="board" id="board"></div>
 </div><!-- /appwrap -->
 
@@ -486,6 +489,7 @@ function fromRow(r){return {id:r.id,name:r.name,phone:r.phone||'',email:r.email|
     {pct:r.course_pct,exam:r.exam_prep_pct,lastLogin:r.lic_last_login||'',course:r.lic_course||'',
      enrolled:r.lic_enrolled_at||'',completed:r.lic_completed_at||''}:null,
   log:Array.isArray(r.log)?r.log:[],
+  stage_emails:(r.stage_emails&&typeof r.stage_emails==='object')?r.stage_emails:{},
   created:r.created_at?+new Date(r.created_at):Date.now(),
   last:r.last_contact_at?+new Date(r.last_contact_at):null};}
 function toRow(rec){const L=rec.licensing||null;return {
@@ -515,9 +519,23 @@ async function notifySlack(event,recruit,stage){
   try{ await SB.functions.invoke('notify-slack',{body:{event,
     recruit:{name:recruit.name,recruiter:recruit.recruiter,source:recruit.source},stage}}); }
   catch(e){ console.warn('Slack notify skipped',e); }
-  try{ if(recruit.email) await SB.functions.invoke('send-email',{body:{event,
-    recruit:{name:recruit.name,email:recruit.email},stage}}); }
-  catch(e){ console.warn('Email send skipped',e); }
+  // Fire the stage email AS the assigned recruiter, and record whether it sent
+  // so the card can show a status dot for this stage.
+  const stKey=(event==='new')?'interview':(stage||recruit.stage);
+  let light='pending';
+  try{
+    const {data,error}=await SB.functions.invoke('send-email',{body:{event,
+      recruit:{name:recruit.name,email:recruit.email,recruiter_name:recruit.recruiter},stage}});
+    if(error)light='failed';
+    else{const s=data&&data.status;light=(s==='sent')?'sent':((s==='failed')?'failed':'pending');}
+  }catch(e){light='failed';console.warn('Email send skipped',e);}
+  await setRecruitEmailStatus(recruit, recruit.stage, light);
+}
+async function setRecruitEmailStatus(recruit, stage, light){
+  recruit.stage_emails=recruit.stage_emails||{};
+  recruit.stage_emails[stage]={status:light,at:Date.now()};
+  try{ await SB.from('recruits').update({stage_emails:recruit.stage_emails}).eq('id',recruit.id); }catch(e){}
+  render();
 }
 function uid(){return 'r'+Date.now()+Math.floor(Math.random()*1000);}
 function seed(){
@@ -565,7 +583,10 @@ function cardEl(r){
   el.addEventListener('dragstart',e=>e.dataTransfer.setData('id',r.id));
   el.onclick=()=>openEdit(r.id);
   const tel=(r.phone||'').replace(/\D/g,'');
-  el.innerHTML=`<div class="nm">${esc(r.name)}</div>
+  const es=(r.stage_emails&&r.stage_emails[r.stage])?r.stage_emails[r.stage].status:'';
+  const dc=es==='sent'?'#1d9d5b':(es==='failed'?'#d9433b':'#e3b341');
+  const dt=es==='sent'?'Stage email sent':(es==='failed'?'Stage email failed to send — check this recruit\'s email address':'Stage email not sent yet');
+  el.innerHTML=`<span class="email-dot" style="background:${dc}" title="${dt}"></span><div class="nm">${esc(r.name)}</div>
     <div class="meta">
       <span>${r.phone?fmtPhone(r.phone):'<i>no phone</i>'}</span>
       <span>Last contact: ${r.last?ago(r.last):'—'}</span>
