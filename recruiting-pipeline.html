@@ -72,6 +72,13 @@
   .lic-done{color:var(--good)}
   .nudge{background:#fbe9e8;color:#b23c34;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.2px}
   .b-trk-on{background:#dff1e8;color:#1d7a4f}
+  .set-stage{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+  .set-stage h3{margin:0 0 8px;font-size:14px;color:var(--navy)}
+  .set-msg{background:#f6f8fb;border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:8px}
+  .set-row{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);margin:0 0 7px}
+  .set-row .set-ch{font-size:10px;color:var(--muted);text-transform:uppercase;background:#e7edf5;padding:1px 6px;border-radius:5px}
+  .set-msg input.set-sub{width:100%;margin-bottom:6px}
+  .set-msg textarea.set-bd{width:100%;font-family:inherit;font-size:13px;resize:vertical;min-height:70px}
   .syncbox{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
   .syncres{margin-top:12px;font-size:12.5px}
   .syncres .ok{color:var(--good);font-weight:700}.syncres .miss{color:var(--warn)}
@@ -159,6 +166,7 @@
     <a class="btn-ghost" href="contracting-intake.html" target="_blank" style="text-decoration:none">Contracting Form ↗</a>
     <a class="btn-ghost" href="onboarding.html" target="_blank" style="text-decoration:none">Onboarding ↗</a>
     <a class="btn-ghost" href="https://agent.colburnfinancial.com" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
+    <button class="btn-ghost" onclick="openSettings()">⚙ Settings</button>
     <button class="btn-ghost" onclick="exportData()">Export</button>
     <button class="btn-ghost" onclick="document.getElementById('imp').click()">Import</button>
     <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(event)" />
@@ -249,6 +257,19 @@
     <div class="mfoot">
       <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3);margin-left:auto" onclick="closeSync()">Close</button>
       <button class="btn-navy" onclick="runSync()">Sync</button>
+    </div>
+  </div>
+</div>
+
+<!-- Message Settings modal -->
+<div class="scrim" id="setScrim">
+  <div class="modal" style="width:700px;max-width:100%">
+    <h2>⚙ Message Settings <button class="x" onclick="closeSettings()">×</button></h2>
+    <div class="mbody" id="setBody" style="max-height:68vh;overflow:auto">Loading…</div>
+    <div class="mfoot">
+      <span style="margin-right:auto;color:var(--muted);font-size:11.5px">Edit copy &amp; toggle on/off. Merge fields: {{name}}, {{recruiter}}, {{source}}. Changes go live immediately.</span>
+      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeSettings()">Cancel</button>
+      <button class="btn-navy" onclick="saveSettings()">Save</button>
     </div>
   </div>
 </div>
@@ -463,6 +484,46 @@ function licBlock(r){
 function openSync(){document.getElementById('syncscrim').classList.add('open');
   document.getElementById('syncbox').value='';document.getElementById('syncres').innerHTML='';}
 function closeSync(){document.getElementById('syncscrim').classList.remove('open');}
+
+/* ---------- Message Settings (edit email/Slack copy, no code) ---------- */
+function setBlock(stage,label,channel,m){
+  const en=m?m.enabled!==false:false;
+  const sub=(m&&m.subject)?esc(m.subject):'';
+  const body=m?esc(m.body||''):'';
+  return `<div class="set-msg" data-stage="${stage}" data-channel="${channel}">
+    <label class="set-row"><input type="checkbox" class="set-en" ${en?'checked':''} style="width:16px;height:16px;accent-color:var(--gold)"/> <b>${label}</b> <span class="set-ch">${channel}</span></label>
+    ${channel==='email'?`<input class="set-sub" placeholder="Email subject" value="${sub}"/>`:''}
+    <textarea class="set-bd" placeholder="Message text">${body}</textarea>
+  </div>`;
+}
+async function openSettings(){
+  document.getElementById('setScrim').classList.add('open');
+  const box=document.getElementById('setBody');box.innerHTML='Loading…';
+  const {data,error}=await SB.from('messages').select('*');
+  if(error){box.innerHTML='Could not load: '+esc(error.message);return;}
+  const byKey={};(data||[]).forEach(m=>byKey[m.stage+'|'+m.channel]=m);
+  let html=`<div class="set-stage"><h3>New recruit added</h3>${setBlock('new','Recruiter Slack alert','slack',byKey['new|slack'])}</div>`;
+  STAGES.forEach(st=>{
+    html+=`<div class="set-stage"><h3>${esc(st.name)}</h3>`;
+    html+=setBlock(st.id,'Agent email','email',byKey[st.id+'|email']);
+    html+=setBlock(st.id,'Recruiter Slack alert','slack',byKey[st.id+'|slack']);
+    html+=`</div>`;
+  });
+  box.innerHTML=html;
+}
+async function saveSettings(){
+  const rows=[...document.querySelectorAll('#setBody .set-msg')].map(el=>{
+    const subEl=el.querySelector('.set-sub');
+    return {stage:el.dataset.stage,channel:el.dataset.channel,
+      enabled:el.querySelector('.set-en').checked,
+      subject:subEl?subEl.value:null,
+      body:el.querySelector('.set-bd').value};
+  });
+  const {error}=await SB.from('messages').upsert(rows,{onConflict:'stage,channel'});
+  if(error){alert('Save failed: '+error.message);return;}
+  alert('Saved — changes are live immediately.');closeSettings();
+}
+function closeSettings(){document.getElementById('setScrim').classList.remove('open');}
 function toISO(d){const t=new Date(d);return isNaN(t)?'':t.toISOString().slice(0,10);}
 function parseJI(text){
   const re=/(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+([\d.]+)%\s+(?:(\d{1,2}\/\d{1,2}\/\d{4})\s+)?([A-Za-z'.\-]+)\s+([A-Za-z'.\-]+)\s+(\+?\d{10,})\s+(\S+@\S+)\s+([\s\S]+?)\s+([\d.]+)%(?=\s|$)/g;
