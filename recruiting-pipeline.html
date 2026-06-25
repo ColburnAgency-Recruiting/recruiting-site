@@ -171,7 +171,7 @@
     <button class="btn-ghost" onclick="openSync()">⟳ Sync Licensing</button>
     <a class="btn-ghost" href="contracting-intake.html" target="_blank" style="text-decoration:none">Contracting Form ↗</a>
     <a class="btn-ghost" href="onboarding.html" target="_blank" style="text-decoration:none">Onboarding ↗</a>
-    <a class="btn-ghost" href="https://agent.colburnfinancial.com" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
+    <a class="btn-ghost" href="https://agent.colburnfinancial.com/" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
     <button class="btn-ghost" onclick="openSettings()">⚙ Settings</button>
     <button class="btn-ghost" onclick="openStages()">⚙ Stages</button>
     <button class="btn-ghost" onclick="openDrips()">⚙ Drips</button>
@@ -226,7 +226,7 @@
 
       <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:13px">
         <input type="checkbox" id="f_tracker" style="width:18px;height:18px;accent-color:var(--gold)" />
-        <span>Agency Tracker account created — <a href="https://agent.colburnfinancial.com" target="_blank" style="color:var(--navy3);font-weight:600">agent.colburnfinancial.com</a></span>
+        <span>Agency Tracker account created — <a href="https://agent.colburnfinancial.com/" target="_blank" style="color:var(--navy3);font-weight:600">agent.colburnfinancial.com</a></span>
       </div>
 
       <label>Communication log</label>
@@ -241,6 +241,9 @@
         <button class="btn-navy" style="flex:none" onclick="addLog()">Log</button>
       </div>
       <div class="log" id="loglist"></div>
+
+      <label style="margin-top:14px">📋 Submitted forms (Onboarding / Contracting)</label>
+      <div id="formsbox" class="formsbox"><div class="fb-empty">—</div></div>
 
       <div class="tmpl" id="tmplbox"></div>
     </div>
@@ -344,6 +347,17 @@
   .team-row input.tm-email{flex:1.4;min-width:160px}
   .team-row label{font-size:11px;color:var(--muted);white-space:nowrap}
   .team-del{background:#fdecec;color:#b3261e;border:none;border-radius:7px;padding:7px 10px;cursor:pointer}
+</style>
+
+<style>
+  .formsbox{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .formsbox .fb-empty{color:var(--muted);font-size:13px;padding:2px 0}
+  .ff-card{border:1px solid #e3e9f0;border-radius:8px;background:#fafbfd}
+  .ff-card summary{cursor:pointer;padding:8px 10px;font-size:13px;font-weight:600;color:var(--navy3)}
+  .ff-when{color:var(--muted);font-size:11px;font-weight:400;margin-left:6px}
+  .ff-body{padding:2px 10px 10px}
+  .ff-row{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-top:1px dashed #eef1f5;font-size:12.5px}
+  .ff-k{color:var(--muted)}.ff-v{font-weight:600;text-align:right;word-break:break-word}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -825,6 +839,7 @@ function openAdd(stage){
   ['lic_pct','lic_exam','lic_login','lic_course'].forEach(k=>document.getElementById('f_'+k).value='');
   document.getElementById('f_tracker').checked=false;
   tmpLog=[];renderLog();renderTmpl(stage||'interview');
+  document.getElementById('formsbox').innerHTML='<div class="fb-empty">Forms appear here once this recruit submits them.</div>';
   document.getElementById('scrim').classList.add('open');
 }
 let tmpLog=[];
@@ -847,7 +862,32 @@ function openEdit(id){
   document.getElementById('f_tracker').checked=!!r.tracker;
   tmpLog=(r.log||[]).slice();renderLog();renderTmpl(r.stage);
   document.getElementById('f_stage').onchange=()=>renderTmpl(document.getElementById('f_stage').value);
+  loadRecruitForms(r);
   document.getElementById('scrim').classList.add('open');
+}
+/* ---------- Per-recruit submitted forms (Onboarding / Contracting) ---------- */
+async function loadRecruitForms(r){
+  const box=document.getElementById('formsbox');
+  box.innerHTML='<div class="fb-empty">Loading…</div>';
+  const email=(r.email||'').trim();
+  const ors=[];
+  if(r.id)ors.push('recruit_id.eq.'+r.id);
+  if(email)ors.push('email.ilike.'+email);
+  if(!ors.length){box.innerHTML='<div class="fb-empty">Add an email to match this recruit\'s forms.</div>';return;}
+  try{
+    const {data,error}=await SB.from('form_submissions')
+      .select('kind,name,email,data,created_at').or(ors.join(',')).order('created_at',{ascending:false});
+    if(error){box.innerHTML='<div class="fb-empty">Could not load forms.</div>';return;}
+    if(!data||!data.length){box.innerHTML='<div class="fb-empty">No forms submitted yet.</div>';return;}
+    box.innerHTML=data.map(renderFormCard).join('');
+  }catch(e){box.innerHTML='<div class="fb-empty">Could not load forms.</div>';}
+}
+function renderFormCard(f){
+  const label=f.kind==='contracting'?'Contracting':'Onboarding';
+  const when=f.created_at?new Date(f.created_at).toLocaleString():'';
+  const d=f.data||{};
+  const rows=Object.keys(d).map(k=>`<div class="ff-row"><span class="ff-k">${esc(k)}</span><span class="ff-v">${esc(String(d[k]))}</span></div>`).join('');
+  return `<details class="ff-card"><summary>${label} — ${esc(f.name||f.email||'')}<span class="ff-when">${when}</span></summary><div class="ff-body">${rows||'<i>No fields</i>'}</div></details>`;
 }
 function renderTmpl(stage){
   const t=TEMPLATES[stage]||TEMPLATES.interview;

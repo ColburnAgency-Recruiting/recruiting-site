@@ -74,6 +74,7 @@
   <div class="nb-links">
     <a href="onboarding.html" class="active">Onboarding</a>
     <a href="contracting-intake.html">Contracting</a>
+    <a href="https://recruiting.colburnfinancial.com/">↩ Main site</a>
   </div>
 </nav>
 <header>
@@ -144,6 +145,17 @@
     </div>
   </div>
 
+  <div class="finishbox">
+    <h2>Done? Let your agency know</h2>
+    <p>Enter your name and email, then submit — your recruiting team gets notified right away so they can take it from here.</p>
+    <div class="fb-fields">
+      <input id="ob_name" placeholder="Your full name" autocomplete="name">
+      <input id="ob_email" type="email" placeholder="Your email" autocomplete="email">
+    </div>
+    <button id="ob_btn" onclick="finishOnboarding(this)">I've completed onboarding</button>
+    <div id="ob_msg" class="fb-msg"></div>
+  </div>
+
   <div class="cta">
     <h2>Already contracted or ready to be?</h2>
     <p>Complete your contracting information so we can get you set up in HQ and writing.</p>
@@ -164,10 +176,45 @@
   <footer>Colburn Agency &middot; Family, Community, and Leadership</footer>
 </div>
 
+<style>
+  .finishbox{background:#0c2240;color:#fff;border-radius:16px;padding:24px;margin:26px 0;text-align:center}
+  .finishbox h2{margin:0 0 6px;color:#fff}
+  .finishbox p{color:#cdddf0;margin:0 0 14px;font-size:14px}
+  .fb-fields{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+  .fb-fields input{flex:1;min-width:200px;max-width:280px;padding:11px 13px;border:none;border-radius:9px;font:inherit}
+  .finishbox button{background:var(--gold);color:var(--navy);border:none;border-radius:10px;padding:12px 22px;
+    font-weight:800;font-size:15px;cursor:pointer}
+  .finishbox button:hover{filter:brightness(.96)}
+  .finishbox button:disabled{opacity:.7;cursor:default}
+  .fb-msg{margin-top:12px;font-weight:700;font-size:14px;min-height:18px}
+</style>
 <script>
 const STEPS=['corevalues','calendar','slack','zoom','event'];
+const STEP_LABELS={corevalues:'Core Values',calendar:'Agency Calendar',slack:'Slack',zoom:'Zoom',event:'Next Event'};
+const SUPA_URL='https://vrtnbucwukxdkiisndnk.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZydG5idWN3dWt4ZGtpaXNuZG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjQ5MTcsImV4cCI6MjA5NzkwMDkxN30.hjdRPeWHvTT27sCIZMhfgLuuntPloDoK8Cm2EPRFl2w';
 const KEY='cf_onboarding_progress';
 let done=load();
+async function finishOnboarding(btn){
+  const name=document.getElementById('ob_name').value.trim();
+  const email=document.getElementById('ob_email').value.trim();
+  const msg=document.getElementById('ob_msg');
+  if(!name||!email){msg.style.color='#ffd27a';msg.textContent='Please enter your name and email.';return;}
+  const data={};STEPS.forEach(id=>{data[STEP_LABELS[id]]=done[id]?'Yes':'No';});
+  const orig=btn.textContent;btn.disabled=true;btn.textContent='Submitting…';msg.textContent='';
+  try{
+    await fetch(SUPA_URL+'/functions/v1/submit-form',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+SUPA_KEY,'apikey':SUPA_KEY,'content-type':'application/json'},
+      body:JSON.stringify({kind:'onboarding',email:email,name:name,data:data})
+    });
+    msg.style.color='#7ee6b0';msg.textContent='✓ Thanks '+name.split(' ')[0]+'! Your agency has been notified.';
+    btn.textContent='Submitted ✓';
+  }catch(e){
+    msg.style.color='#ffb4b4';msg.textContent='Could not submit — please try again or contact your recruiter.';
+    btn.disabled=false;btn.textContent=orig;
+  }
+}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==='object')return d;}catch(e){}return {};}
 function save(){localStorage.setItem(KEY,JSON.stringify(done));}
 function toggle(id){done[id]=!done[id];save();render();}

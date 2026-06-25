@@ -80,6 +80,7 @@
   <div class="nb-links">
     <a href="onboarding.html">Onboarding</a>
     <a href="contracting-intake.html" class="active">Contracting</a>
+    <a href="https://recruiting.colburnfinancial.com/">↩ Main site</a>
   </div>
 </nav>
 <header>
@@ -205,7 +206,9 @@
 <footer>Colburn Agency &middot; New Agent Onboarding</footer>
 
 <script>
-const AGENCY_EMAIL='colburnfinancial@gmail.com'; // change to where contracting info should go
+const AGENCY_EMAIL='colburnfinancial@gmail.com'; // mailto fallback only
+const SUPA_URL='https://vrtnbucwukxdkiisndnk.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZydG5idWN3dWt4ZGtpaXNuZG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjQ5MTcsImV4cCI6MjA5NzkwMDkxN30.hjdRPeWHvTT27sCIZMhfgLuuntPloDoK8Cm2EPRFl2w';
 let lastData=null;
 
 function toggleLic(isLic){
@@ -221,7 +224,7 @@ function collect(){
   });
   return d;
 }
-function submitForm(){
+async function submitForm(){
   document.getElementById('formerr').style.display='none';
   document.getElementById('ackerr').style.display='none';
   let ok=true;
@@ -252,6 +255,17 @@ function submitForm(){
   const subject='Contracting Info — '+(lastData['First name']||'')+' '+(lastData['Last name']||'');
   document.getElementById('emailbtn').href=
     'mailto:'+AGENCY_EMAIL+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+
+  // Submit to the recruiting system (stores it, matches the recruit, alerts the team).
+  const btn=document.querySelector('.submit');
+  if(btn){btn.disabled=true;btn.textContent='Submitting…';}
+  try{
+    await fetch(SUPA_URL+'/functions/v1/submit-form',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+SUPA_KEY,'apikey':SUPA_KEY,'content-type':'application/json'},
+      body:JSON.stringify({kind:'contracting',email:lastData['Email']||'',name:name,data:lastData})
+    });
+  }catch(e){/* fall through — they still have the email/download fallback on the done screen */}
 
   document.getElementById('form').style.display='none';
   document.getElementById('done').classList.add('show');
