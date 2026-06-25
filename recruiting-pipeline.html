@@ -79,6 +79,12 @@
   .set-row .set-ch{font-size:10px;color:var(--muted);text-transform:uppercase;background:#e7edf5;padding:1px 6px;border-radius:5px}
   .set-msg input.set-sub{width:100%;margin-bottom:6px}
   .set-msg textarea.set-bd{width:100%;font-family:inherit;font-size:13px;resize:vertical;min-height:70px}
+  .stg-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .stg-ord{display:flex;flex-direction:column;gap:2px}
+  .stg-ord button{padding:1px 6px;font-size:9px;line-height:1.2;background:#eef2f7;color:var(--navy3)}
+  .stg-col{width:40px;height:34px;padding:2px;border:1px solid var(--line);border-radius:7px;background:#fff}
+  .stg-name{flex:1}
+  .stg-act{display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted);margin:0;white-space:nowrap}
   .syncbox{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
   .syncres{margin-top:12px;font-size:12.5px}
   .syncres .ok{color:var(--good);font-weight:700}.syncres .miss{color:var(--warn)}
@@ -167,6 +173,7 @@
     <a class="btn-ghost" href="onboarding.html" target="_blank" style="text-decoration:none">Onboarding ↗</a>
     <a class="btn-ghost" href="https://agent.colburnfinancial.com" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
     <button class="btn-ghost" onclick="openSettings()">⚙ Settings</button>
+    <button class="btn-ghost" onclick="openStages()">⚙ Stages</button>
     <button class="btn-ghost" onclick="exportData()">Export</button>
     <button class="btn-ghost" onclick="document.getElementById('imp').click()">Import</button>
     <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(event)" />
@@ -274,10 +281,25 @@
   </div>
 </div>
 
+<!-- Stage Editor modal -->
+<div class="scrim" id="stageScrim">
+  <div class="modal" style="width:560px;max-width:100%">
+    <h2>⚙ Pipeline Stages <button class="x" onclick="closeStages()">×</button></h2>
+    <div class="mbody" id="stageBody" style="max-height:58vh;overflow:auto">Loading…</div>
+    <div class="mbody" style="padding-top:0"><button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="addStageRow()">+ Add stage</button></div>
+    <div class="mfoot">
+      <span style="margin-right:auto;color:var(--muted);font-size:11.5px">Reorder ▲▼, rename, recolor, show/hide. New stages start with no messages — add copy in ⚙ Settings.</span>
+      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeStages()">Cancel</button>
+      <button class="btn-navy" onclick="saveStages()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ---------- Pipeline configuration ---------- */
-const STAGES = [
+/* Default stages — overwritten from the `stages` table at login (editable in the Stage Editor) */
+let STAGES = [
   {id:'interview',    name:'Interview',             color:'#5b8fd6'},
   {id:'meet',         name:'Meet & Greet',          color:'#8a6fc4'},
   {id:'licensing',    name:'In Licensing',          color:'#d98a32'},   // unlicensed branch
@@ -378,6 +400,14 @@ async function loadDB(){
   if(error){alert('Could not load recruits: '+error.message);return;}
   DATA=(data||[]).map(fromRow);render();
 }
+/* Load the pipeline columns from the stages table (falls back to the defaults above) */
+async function loadStages(){
+  try{
+    const {data}=await SB.from('stages').select('*').eq('active',true).order('position',{ascending:true});
+    if(data&&data.length) STAGES=data.map(s=>({id:s.id,name:s.name,color:s.color||'#5b8fd6',is_licensing:s.is_licensing}));
+  }catch(e){ console.warn('Stage load fell back to defaults',e); }
+}
+function isLic(id){const s=STAGES.find(x=>x.id===id);return s?!!s.is_licensing:(id==='licensing');}
 /* Fire stage triggers: recruiter Slack alert + agent email (non-blocking — never interrupts the user) */
 async function notifySlack(event,recruit,stage){
   try{ await SB.functions.invoke('notify-slack',{body:{event,
@@ -467,11 +497,11 @@ function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>'
 
 /* ---------- Licensing (JustInsurance) ---------- */
 function daysSince(d){if(!d)return null;const t=new Date(d);if(isNaN(t))return null;return Math.floor((Date.now()-t)/864e5);}
-function needsNudge(r){if(r.stage!=='licensing'||!r.licensing)return false;
+function needsNudge(r){if(!isLic(r.stage)||!r.licensing)return false;
   const L=r.licensing,dl=daysSince(L.lastLogin);
   return (dl!==null&&dl>10)|| (L.pct<100 && daysSince(L.enrolled)>30);}
 function licBlock(r){
-  if(r.stage!=='licensing'||!r.licensing)return '';
+  if(!isLic(r.stage)||!r.licensing)return '';
   const L=r.licensing,pct=Math.round(L.pct||0),dl=daysSince(L.lastLogin),stale=dl!==null&&dl>10;
   return `<div class="lic-prog">
     <div class="lic-bar"><span style="width:${pct}%"></span></div>
@@ -524,6 +554,47 @@ async function saveSettings(){
   alert('Saved — changes are live immediately.');closeSettings();
 }
 function closeSettings(){document.getElementById('setScrim').classList.remove('open');}
+
+/* ---------- Stage Editor (add / rename / recolor / reorder / show-hide pipeline columns) ---------- */
+let _stageRows=[];
+async function openStages(){
+  document.getElementById('stageScrim').classList.add('open');
+  const box=document.getElementById('stageBody');box.innerHTML='Loading…';
+  const {data,error}=await SB.from('stages').select('*').order('position',{ascending:true});
+  if(error){box.innerHTML='Could not load: '+esc(error.message);return;}
+  _stageRows=(data||[]).map(s=>({id:s.id,name:s.name,color:s.color||'#5b8fd6',is_licensing:!!s.is_licensing,active:s.active!==false}));
+  renderStageRows();
+}
+function renderStageRows(){
+  const last=_stageRows.length-1;
+  document.getElementById('stageBody').innerHTML=_stageRows.map((s,i)=>`
+    <div class="stg-row">
+      <div class="stg-ord">
+        <button onclick="moveStage(${i},-1)" ${i===0?'disabled':''}>▲</button>
+        <button onclick="moveStage(${i},1)" ${i===last?'disabled':''}>▼</button>
+      </div>
+      <input type="color" class="stg-col" value="${s.color}" oninput="_stageRows[${i}].color=this.value">
+      <input class="stg-name" value="${esc(s.name)}" oninput="_stageRows[${i}].name=this.value" placeholder="Stage name">
+      <label class="stg-act"><input type="checkbox" ${s.active?'checked':''} onchange="_stageRows[${i}].active=this.checked"> shown</label>
+    </div>`).join('');
+}
+function moveStage(i,d){const j=i+d;if(j<0||j>=_stageRows.length)return;[_stageRows[i],_stageRows[j]]=[_stageRows[j],_stageRows[i]];renderStageRows();}
+function addStageRow(){_stageRows.push({id:'',name:'',color:'#5b8fd6',is_licensing:false,active:true});renderStageRows();}
+function slugify(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,40);}
+async function saveStages(){
+  const rows=_stageRows.filter(s=>(s.name||'').trim());
+  const seen={};
+  const payload=rows.map((s,i)=>{
+    let id=s.id||slugify(s.name)||('stage'+i);
+    while(seen[id])id+='x'; seen[id]=1;
+    return {id,name:s.name.trim(),color:s.color,is_licensing:s.is_licensing,active:s.active,position:i+1};
+  });
+  const {error}=await SB.from('stages').upsert(payload,{onConflict:'id'});
+  if(error){alert('Save failed: '+error.message);return;}
+  alert('Pipeline stages saved.');closeStages();
+  await loadStages();fillStageSelect();render();
+}
+function closeStages(){document.getElementById('stageScrim').classList.remove('open');}
 function toISO(d){const t=new Date(d);return isNaN(t)?'':t.toISOString().slice(0,10);}
 function parseJI(text){
   const re=/(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+([\d.]+)%\s+(?:(\d{1,2}\/\d{1,2}\/\d{4})\s+)?([A-Za-z'.\-]+)\s+([A-Za-z'.\-]+)\s+(\+?\d{10,})\s+(\S+@\S+)\s+([\s\S]+?)\s+([\d.]+)%(?=\s|$)/g;
@@ -725,6 +796,7 @@ async function showApp(){
   document.getElementById('loginScrim').style.display='none';
   document.getElementById('appwrap').style.display='flex';
   try{const {data:{user}}=await SB.auth.getUser(); document.getElementById('whoami').textContent=user?user.email:'';}catch(e){}
+  await loadStages();fillStageSelect();
   await loadDB();
 }
 async function doLogin(){
