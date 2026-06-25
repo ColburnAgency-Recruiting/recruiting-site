@@ -59,8 +59,9 @@
   .card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;
     box-shadow:var(--shadow);cursor:grab;border-left:4px solid var(--navy3)}
   .card:active{cursor:grabbing}
-  .email-dot{position:absolute;top:9px;right:9px;width:11px;height:11px;border-radius:50%;
-    box-shadow:0 0 0 2px #fff, 0 0 3px rgba(0,0,0,.25);cursor:help}
+  .email-dot{position:absolute;top:9px;right:9px;width:12px;height:12px;border-radius:50%;
+    box-shadow:0 0 0 2px #fff, 0 0 3px rgba(0,0,0,.25);cursor:pointer}
+  .email-dot:hover{transform:scale(1.25)}
   .card.lic{border-left-color:var(--lic)} .card.unl{border-left-color:var(--unl)}
   .card .nm{font-weight:700;font-size:13.5px;margin-bottom:3px}
   .card .meta{font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:1px}
@@ -257,6 +258,7 @@
     </div>
     <div class="mfoot">
       <button class="btn-del" id="delbtn" onclick="delRecruit()">Delete</button>
+      <button class="btn-ghost" id="resendbtn" style="background:#eef2f7;color:var(--navy3)" onclick="resendStageEmail(editingId,this)">📧 Resend email</button>
       <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeModal()">Cancel</button>
       <button class="btn-navy" onclick="saveRecruit()">Save</button>
     </div>
@@ -537,6 +539,29 @@ async function setRecruitEmailStatus(recruit, stage, light){
   try{ await SB.from('recruits').update({stage_emails:recruit.stage_emails}).eq('id',recruit.id); }catch(e){}
   render();
 }
+/* Manual resend of the CURRENT stage's email — used by the card dot and the
+   "Resend email" button. Updates the status dot with the result. */
+async function resendStageEmail(id, btn){
+  const r=DATA.find(x=>x.id===id);
+  if(!r){alert('Save this recruit first, then resend.');return;}
+  const stName=((STAGES.find(s=>s.id===r.stage)||{}).name)||r.stage;
+  if(!r.email){alert(r.name+' has no email address on their card — add one first.');return;}
+  if(!confirm('Resend the "'+stName+'" email to '+r.name+' ('+r.email+')?'))return;
+  if(btn){btn.disabled=true;var o=btn.textContent;btn.textContent='Sending…';}
+  let light='pending', msg='';
+  try{
+    const {data,error}=await SB.functions.invoke('send-email',{body:{
+      recruit:{name:r.name,email:r.email,recruiter_name:r.recruiter},stage:r.stage}});
+    const s=(!error&&data)?data.status:'failed';
+    if(s==='sent'){light='sent';msg='✓ Email sent to '+r.name+'.';}
+    else if(s==='no_template'){light='pending';msg='No email is set up for this stage. Add one in ⚙ Settings.';}
+    else if(s==='no_recipient'){light='pending';msg=r.name+' has no email address.';}
+    else{light='failed';msg='Send failed'+((data&&data.error)?': '+data.error:'')+'.';}
+  }catch(e){light='failed';msg='Send failed: '+(e.message||e);}
+  await setRecruitEmailStatus(r, r.stage, light);
+  if(btn){btn.disabled=false;btn.textContent=o;}
+  alert(msg);
+}
 function uid(){return 'r'+Date.now()+Math.floor(Math.random()*1000);}
 function seed(){
   const now=Date.now(), day=864e5;
@@ -586,7 +611,7 @@ function cardEl(r){
   const es=(r.stage_emails&&r.stage_emails[r.stage])?r.stage_emails[r.stage].status:'';
   const dc=es==='sent'?'#1d9d5b':(es==='failed'?'#d9433b':'#e3b341');
   const dt=es==='sent'?'Stage email sent':(es==='failed'?'Stage email failed to send — check this recruit\'s email address':'Stage email not sent yet');
-  el.innerHTML=`<span class="email-dot" style="background:${dc}" title="${dt}"></span><div class="nm">${esc(r.name)}</div>
+  el.innerHTML=`<span class="email-dot" style="background:${dc}" title="${dt} — click to resend" onclick="event.stopPropagation();resendStageEmail('${r.id}')"></span><div class="nm">${esc(r.name)}</div>
     <div class="meta">
       <span>${r.phone?fmtPhone(r.phone):'<i>no phone</i>'}</span>
       <span>Last contact: ${r.last?ago(r.last):'—'}</span>
@@ -957,6 +982,7 @@ function openAdd(stage){
   editingId=null;fillStageSelect();
   document.getElementById('mtitle').firstChild.textContent='Add Recruit ';
   document.getElementById('delbtn').style.display='none';
+  document.getElementById('resendbtn').style.display='none';
   f('name','');f('phone','');f('email','');
   fillSelect(document.getElementById('f_source'),SOURCES,SOURCES[0]);
   fillRecruiterSelect(document.getElementById('f_recruiter'),filterRecruiter||RECRUITERS[0]||'');
@@ -976,6 +1002,7 @@ function openEdit(id){
   editingId=id;fillStageSelect();
   document.getElementById('mtitle').firstChild.textContent='Edit Recruit ';
   document.getElementById('delbtn').style.display='';
+  document.getElementById('resendbtn').style.display='';
   f('name',r.name);f('phone',r.phone);f('email',r.email);
   fillSelect(document.getElementById('f_source'),SOURCES,r.source||'Other');
   fillRecruiterSelect(document.getElementById('f_recruiter'),r.recruiter||'');
