@@ -31,6 +31,8 @@
   .search::placeholder{color:#aebfd2}
   /* dropdown list items render on a white menu — keep their text dark so names are readable */
   .search option{color:#102a4a;background:#fff}
+  /* recruiters (non-admins) don't see admin-only controls */
+  body.role-recruiter .admin-only{display:none!important}
   button,a.btn-ghost,a.btn-gold{font-family:inherit;cursor:pointer;border:none;border-radius:8px;font-size:13px;
     font-weight:600;padding:8px 13px;transition:.15s;display:inline-flex;align-items:center;gap:6px}
   .btn-gold{background:var(--gold);color:var(--navy)}
@@ -167,20 +169,21 @@
     <div><h1>Recruiting Pipeline</h1><p>COLBURN AGENCY &middot; AGENT ONBOARDING</p></div>
   </div>
   <div class="tools">
-    <select id="recFilter" class="search" style="width:165px" onchange="setRecFilter()"></select>
+    <select id="recFilter" class="search admin-only" style="width:165px" onchange="setRecFilter()"></select>
     <input id="search" class="search" placeholder="Search recruits…" oninput="render()" />
     <button class="btn-gold" onclick="openAdd()">+ Add Recruit</button>
-    <button class="btn-ghost" onclick="openSync()">⟳ Sync Licensing</button>
+    <button class="btn-ghost admin-only" onclick="openSync()">⟳ Sync Licensing</button>
     <a class="btn-ghost" href="contracting-intake.html" target="_blank" style="text-decoration:none">Contracting Form ↗</a>
     <a class="btn-ghost" href="onboarding.html" target="_blank" style="text-decoration:none">Onboarding ↗</a>
     <a class="btn-ghost" href="https://tracker.colburnfinancial.com/" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
-    <button class="btn-ghost" onclick="openSettings()">⚙ Settings</button>
-    <button class="btn-ghost" onclick="openStages()">⚙ Stages</button>
-    <button class="btn-ghost" onclick="openDrips()">⚙ Drips</button>
-    <button class="btn-ghost" onclick="openTeam()">⚙ Team</button>
-    <button class="btn-ghost" onclick="exportData()">Export</button>
-    <button class="btn-ghost" onclick="document.getElementById('imp').click()">Import</button>
+    <button class="btn-ghost admin-only" onclick="openSettings()">⚙ Settings</button>
+    <button class="btn-ghost admin-only" onclick="openStages()">⚙ Stages</button>
+    <button class="btn-ghost admin-only" onclick="openDrips()">⚙ Drips</button>
+    <button class="btn-ghost admin-only" onclick="openTeam()">⚙ Team</button>
+    <button class="btn-ghost admin-only" onclick="exportData()">Export</button>
+    <button class="btn-ghost admin-only" onclick="document.getElementById('imp').click()">Import</button>
     <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(event)" />
+    <span id="rolebadge" style="display:none;color:#cdddf0;font-size:11px;background:rgba(255,255,255,.12);padding:4px 9px;border-radius:7px;margin-left:2px"></span>
     <span id="whoami" style="color:#cdddf0;font-size:12px;margin-left:6px"></span>
     <button class="btn-ghost" onclick="doLogout()">Log out</button>
   </div>
@@ -347,6 +350,7 @@
   .team-row input{padding:7px 9px;border:1px solid #cdd7e3;border-radius:7px;font:inherit}
   .team-row input.tm-name{flex:1;min-width:120px}
   .team-row input.tm-email{flex:1.4;min-width:160px}
+  .team-row .tm-role{flex:0 0 108px;width:108px;padding:7px 8px;border:1px solid #cdd7e3;border-radius:7px;font:inherit;background:#fff;color:#102a4a}
   .team-row label{font-size:11px;color:var(--muted);white-space:nowrap}
   .team-del{background:#fdecec;color:#b3261e;border:none;border-radius:7px;padding:7px 10px;cursor:pointer}
 </style>
@@ -733,7 +737,7 @@ async function openTeam(){
   const box=document.getElementById('teamBody');box.innerHTML='Loading…';
   const {data,error}=await SB.from('recruiter_emails').select('*').order('name',{ascending:true});
   if(error){box.innerHTML='Could not load: '+esc(error.message);return;}
-  _teamRows=(data||[]).map(t=>({name:t.name,email:t.email||'',active:t.active!==false,_orig:t.name}));
+  _teamRows=(data||[]).map(t=>({name:t.name,email:t.email||'',active:t.active!==false,role:t.role||'recruiter',_orig:t.name}));
   _teamDeleted=[];
   renderTeamRows();
 }
@@ -744,15 +748,19 @@ function renderTeamRows(){
     <div class="team-row">
       <input class="tm-name" placeholder="Recruiter name" value="${esc(t.name)}" oninput="_teamRows[${i}].name=this.value">
       <input class="tm-email" type="email" placeholder="reply email (their Gmail)" value="${esc(t.email)}" oninput="_teamRows[${i}].email=this.value">
+      <select class="tm-role" onchange="_teamRows[${i}].role=this.value" title="Admin = full access; Recruiter = only their own recruits">
+        <option value="recruiter" ${t.role!=='admin'?'selected':''}>Recruiter</option>
+        <option value="admin" ${t.role==='admin'?'selected':''}>Admin</option>
+      </select>
       <label><input type="checkbox" ${t.active?'checked':''} onchange="_teamRows[${i}].active=this.checked"> active</label>
       <button class="team-del" onclick="removeTeamRow(${i})">Delete</button>
     </div>`).join('');
 }
-function addTeamRow(){_teamRows.push({name:'',email:'',active:true,_orig:''});renderTeamRows();}
+function addTeamRow(){_teamRows.push({name:'',email:'',active:true,role:'recruiter',_orig:''});renderTeamRows();}
 function removeTeamRow(i){const t=_teamRows[i];if(t&&t._orig)_teamDeleted.push(t._orig);_teamRows.splice(i,1);renderTeamRows();}
 async function saveTeam(){
   const valid=_teamRows.filter(t=>(t.name||'').trim());
-  const rows=valid.map(t=>({name:t.name.trim(),email:(t.email||'').trim()||null,active:t.active}));
+  const rows=valid.map(t=>({name:t.name.trim(),email:(t.email||'').trim()||null,active:t.active,role:t.role||'recruiter'}));
   // Names that were renamed: delete the old key so it doesn't linger.
   valid.forEach(t=>{ if(t._orig && t._orig!==t.name.trim())_teamDeleted.push(t._orig); });
   try{
@@ -835,6 +843,7 @@ function openAdd(stage){
   f('name','');f('phone','');f('email','');
   fillSelect(document.getElementById('f_source'),SOURCES,SOURCES[0]);
   fillSelect(document.getElementById('f_recruiter'),RECRUITERS,filterRecruiter||RECRUITERS[0]);
+  lockRecruiterField(MY_NAME);
   document.getElementById('f_license').value='unlicensed';
   document.getElementById('f_stage').value=stage||'interview';
   f('notes','');
@@ -853,6 +862,7 @@ function openEdit(id){
   f('name',r.name);f('phone',r.phone);f('email',r.email);
   fillSelect(document.getElementById('f_source'),SOURCES,r.source||'Other');
   fillSelect(document.getElementById('f_recruiter'),RECRUITERS,r.recruiter||'Unassigned');
+  lockRecruiterField(r.recruiter||MY_NAME);
   document.getElementById('f_license').value=r.license||'unlicensed';
   document.getElementById('f_stage').value=r.stage;
   f('notes',r.notes);
@@ -988,13 +998,42 @@ function showLogin(){
   document.getElementById('loginScrim').style.display='flex';
   document.getElementById('appwrap').style.display='none';
 }
+let MY_ROLE='recruiter', MY_NAME='';
 async function showApp(){
   document.getElementById('loginScrim').style.display='none';
   document.getElementById('appwrap').style.display='flex';
-  try{const {data:{user}}=await SB.auth.getUser(); document.getElementById('whoami').textContent=user?user.email:'';}catch(e){}
+  let email='';
+  try{const {data:{user}}=await SB.auth.getUser(); email=user?user.email:''; document.getElementById('whoami').textContent=email;}catch(e){}
+  // Determine this user's role + recruiter identity from the Team table.
+  MY_ROLE='recruiter';MY_NAME='';
+  if(email){
+    try{const {data}=await SB.from('recruiter_emails').select('name,role').ilike('email',email).limit(1);
+      if(data&&data[0]){MY_ROLE=data[0].role||'recruiter';MY_NAME=data[0].name||'';}}catch(e){}
+  }
+  applyRole();
   await loadTeam();populateRecFilter();
   await loadStages();fillStageSelect();
   await loadDB();
+}
+function applyRole(){
+  const admin=(MY_ROLE==='admin');
+  document.body.classList.toggle('role-recruiter',!admin);
+  document.body.classList.toggle('role-admin',admin);
+  const badge=document.getElementById('rolebadge');
+  if(badge){
+    if(admin){badge.style.display='none';}
+    else{badge.style.display='';badge.textContent=(MY_NAME?MY_NAME+' · ':'')+'My recruits';}
+  }
+  if(!admin)filterRecruiter='';   // recruiters aren't filtered by the (hidden) agent picker
+}
+/* Recruiters can't reassign a recruit to someone else — pin the field to themselves. */
+function lockRecruiterField(name){
+  const fr=document.getElementById('f_recruiter');
+  if(!fr)return;
+  if(MY_ROLE==='admin'){fr.disabled=false;return;}
+  const me=MY_NAME||name||'';
+  fr.innerHTML=`<option>${esc(me)}</option>`;
+  fr.value=me; fr.disabled=true;
 }
 async function doLogin(){
   const email=document.getElementById('li_email').value.trim();
