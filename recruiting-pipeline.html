@@ -175,6 +175,7 @@
     <button class="btn-ghost" onclick="openSettings()">⚙ Settings</button>
     <button class="btn-ghost" onclick="openStages()">⚙ Stages</button>
     <button class="btn-ghost" onclick="openDrips()">⚙ Drips</button>
+    <button class="btn-ghost" onclick="openTeam()">⚙ Team</button>
     <button class="btn-ghost" onclick="exportData()">Export</button>
     <button class="btn-ghost" onclick="document.getElementById('imp').click()">Import</button>
     <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(event)" />
@@ -320,6 +321,29 @@
   .drip-row input.drip-sub{width:100%;box-sizing:border-box;margin-bottom:6px}
   .drip-lbl{font-size:11px;color:var(--muted)}
   .drip-del{margin-left:auto;background:#fdecec;color:#b3261e;border:none;border-radius:7px;padding:6px 10px;cursor:pointer}
+</style>
+
+<!-- Team Editor modal (recruiters + their reply emails) -->
+<div class="scrim" id="teamScrim">
+  <div class="modal" style="width:640px;max-width:100%">
+    <h2>⚙ Team <button class="x" onclick="closeTeam()">×</button></h2>
+    <div class="mbody" id="teamBody" style="max-height:60vh;overflow:auto">Loading…</div>
+    <div class="mbody" style="padding-top:0"><button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="addTeamRow()">+ Add recruiter</button></div>
+    <div class="mfoot">
+      <span style="margin-right:auto;color:var(--muted);font-size:11.5px">Emails to a recruit show this recruiter's <b>name</b> as the sender and route replies to their email. Personal Gmail works fine.</span>
+      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeTeam()">Cancel</button>
+      <button class="btn-navy" onclick="saveTeam()">Save</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .team-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .team-row input{padding:7px 9px;border:1px solid #cdd7e3;border-radius:7px;font:inherit}
+  .team-row input.tm-name{flex:1;min-width:120px}
+  .team-row input.tm-email{flex:1.4;min-width:160px}
+  .team-row label{font-size:11px;color:var(--muted);white-space:nowrap}
+  .team-del{background:#fdecec;color:#b3261e;border:none;border-radius:7px;padding:7px 10px;cursor:pointer}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -671,6 +695,60 @@ async function saveDrips(){
   alert('Drips saved — the daily scheduler will use them on its next run.');closeDrips();
 }
 function closeDrips(){document.getElementById('dripScrim').classList.remove('open');}
+
+/* ---------- Team Editor (recruiters + reply emails -> recruiter_emails table) ---------- */
+/* Loaded on startup so the recruiter dropdown is SHARED across the whole team
+   (not just this browser's localStorage), and so the email functions can map
+   recruiter name -> reply email. */
+let _teamRows=[], _teamDeleted=[];
+async function loadTeam(){
+  try{
+    const {data,error}=await SB.from('recruiter_emails').select('name,email,active').order('name',{ascending:true});
+    if(error)return;
+    const names=(data||[]).filter(t=>t.active!==false).map(t=>t.name).filter(Boolean);
+    // Merge DB recruiter names into the dropdown list (union, preserve order: DB first).
+    const merged=[...names];
+    RECRUITERS.forEach(n=>{ if(n&&!merged.includes(n))merged.push(n); });
+    if(merged.length){RECRUITERS=merged;saveList(RKEY,RECRUITERS);}
+  }catch(e){}
+}
+async function openTeam(){
+  document.getElementById('teamScrim').classList.add('open');
+  const box=document.getElementById('teamBody');box.innerHTML='Loading…';
+  const {data,error}=await SB.from('recruiter_emails').select('*').order('name',{ascending:true});
+  if(error){box.innerHTML='Could not load: '+esc(error.message);return;}
+  _teamRows=(data||[]).map(t=>({name:t.name,email:t.email||'',active:t.active!==false,_orig:t.name}));
+  _teamDeleted=[];
+  renderTeamRows();
+}
+function renderTeamRows(){
+  const box=document.getElementById('teamBody');
+  if(!_teamRows.length){box.innerHTML='<p style="color:var(--muted)">No recruiters yet. Click “+ Add recruiter”.</p>';return;}
+  box.innerHTML=_teamRows.map((t,i)=>`
+    <div class="team-row">
+      <input class="tm-name" placeholder="Recruiter name" value="${esc(t.name)}" oninput="_teamRows[${i}].name=this.value">
+      <input class="tm-email" type="email" placeholder="reply email (their Gmail)" value="${esc(t.email)}" oninput="_teamRows[${i}].email=this.value">
+      <label><input type="checkbox" ${t.active?'checked':''} onchange="_teamRows[${i}].active=this.checked"> active</label>
+      <button class="team-del" onclick="removeTeamRow(${i})">Delete</button>
+    </div>`).join('');
+}
+function addTeamRow(){_teamRows.push({name:'',email:'',active:true,_orig:''});renderTeamRows();}
+function removeTeamRow(i){const t=_teamRows[i];if(t&&t._orig)_teamDeleted.push(t._orig);_teamRows.splice(i,1);renderTeamRows();}
+async function saveTeam(){
+  const valid=_teamRows.filter(t=>(t.name||'').trim());
+  const rows=valid.map(t=>({name:t.name.trim(),email:(t.email||'').trim()||null,active:t.active}));
+  // Names that were renamed: delete the old key so it doesn't linger.
+  valid.forEach(t=>{ if(t._orig && t._orig!==t.name.trim())_teamDeleted.push(t._orig); });
+  try{
+    if(_teamDeleted.length){const {error}=await SB.from('recruiter_emails').delete().in('name',_teamDeleted);if(error)throw error;}
+    if(rows.length){const {error}=await SB.from('recruiter_emails').upsert(rows,{onConflict:'name'});if(error)throw error;}
+  }catch(e){alert('Save failed: '+(e.message||e));return;}
+  await loadTeam();
+  fillSelect(document.getElementById('f_recruiter'),RECRUITERS,RECRUITERS[0]);
+  populateRecFilter();
+  alert('Team saved — recruiters and their reply emails are live.');closeTeam();
+}
+function closeTeam(){document.getElementById('teamScrim').classList.remove('open');}
 function toISO(d){const t=new Date(d);return isNaN(t)?'':t.toISOString().slice(0,10);}
 function parseJI(text){
   const re=/(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+([\d.]+)%\s+(?:(\d{1,2}\/\d{1,2}\/\d{4})\s+)?([A-Za-z'.\-]+)\s+([A-Za-z'.\-]+)\s+(\+?\d{10,})\s+(\S+@\S+)\s+([\s\S]+?)\s+([\d.]+)%(?=\s|$)/g;
@@ -872,6 +950,7 @@ async function showApp(){
   document.getElementById('loginScrim').style.display='none';
   document.getElementById('appwrap').style.display='flex';
   try{const {data:{user}}=await SB.auth.getUser(); document.getElementById('whoami').textContent=user?user.email:'';}catch(e){}
+  await loadTeam();populateRecFilter();
   await loadStages();fillStageSelect();
   await loadDB();
 }
