@@ -171,7 +171,7 @@
     <button class="btn-ghost" onclick="openSync()">⟳ Sync Licensing</button>
     <a class="btn-ghost" href="contracting-intake.html" target="_blank" style="text-decoration:none">Contracting Form ↗</a>
     <a class="btn-ghost" href="onboarding.html" target="_blank" style="text-decoration:none">Onboarding ↗</a>
-    <a class="btn-ghost" href="https://agent.colburnfinancial.com/" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
+    <a class="btn-ghost" href="https://tracker.colburnfinancial.com/" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
     <button class="btn-ghost" onclick="openSettings()">⚙ Settings</button>
     <button class="btn-ghost" onclick="openStages()">⚙ Stages</button>
     <button class="btn-ghost" onclick="openDrips()">⚙ Drips</button>
@@ -226,7 +226,7 @@
 
       <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:13px">
         <input type="checkbox" id="f_tracker" style="width:18px;height:18px;accent-color:var(--gold)" />
-        <span>Agency Tracker account created — <a href="https://agent.colburnfinancial.com/" target="_blank" style="color:var(--navy3);font-weight:600">agent.colburnfinancial.com</a></span>
+        <span>Agency Tracker account created — <a href="https://tracker.colburnfinancial.com/" target="_blank" style="color:var(--navy3);font-weight:600">tracker.colburnfinancial.com</a></span>
       </div>
 
       <label>Communication log</label>
@@ -399,12 +399,12 @@ const TEMPLATES = {
   licensedagent:{text:"Hi {{name}}, since you're already licensed, let's get you contracted! Please complete your contracting info form: https://recruiting.colburnfinancial.com/contracting-intake.html — reply when done and I'll walk you through the rest.",
     subject:"Let's get you contracted with Symmetry",
     body:"Hi {{name}},%0D%0A%0D%0ASince you're already licensed, our next step is contracting. Please complete your contracting info form:%0D%0Ahttps://recruiting.colburnfinancial.com/contracting-intake.html%0D%0A%0D%0AOnce it's in, I'll guide you through each contracting step.%0D%0A%0D%0A— Mike, Colburn Agency"},
-  contracted:{text:"Welcome to the team, {{name}}! You're contracted. I'll get your Agency Tracker account set up at agent.colburnfinancial.com and send your login — then we'll kick off FASTTRACK.",
+  contracted:{text:"Welcome to the team, {{name}}! You're contracted. I'll get your Agency Tracker account set up at tracker.colburnfinancial.com and send your login — then we'll kick off FASTTRACK.",
     subject:"You're contracted — welcome to the Colburn Agency!",
-    body:"Hi {{name}},%0D%0A%0D%0AWelcome to the team -- you're officially contracted! Next:%0D%0A1) I'll set up your Agency Tracker account at agent.colburnfinancial.com and send your login%0D%0A2) We'll start you on FASTTRACK%0D%0A%0D%0AExcited to have you on board,%0D%0A— Mike, Colburn Agency"},
-  fasttrack:{text:"{{name}}, time to kick off FASTTRACK! This is your fast path to writing your first policy. Make sure you're logged into your Agency Tracker (agent.colburnfinancial.com) — let's go!",
+    body:"Hi {{name}},%0D%0A%0D%0AWelcome to the team -- you're officially contracted! Next:%0D%0A1) I'll set up your Agency Tracker account at tracker.colburnfinancial.com and send your login%0D%0A2) We'll start you on FASTTRACK%0D%0A%0D%0AExcited to have you on board,%0D%0A— Mike, Colburn Agency"},
+  fasttrack:{text:"{{name}}, time to kick off FASTTRACK! This is your fast path to writing your first policy. Make sure you're logged into your Agency Tracker (tracker.colburnfinancial.com) — let's go!",
     subject:"Your FASTTRACK kickoff",
-    body:"Hi {{name}},%0D%0A%0D%0AWelcome to FASTTRACK -- your accelerated path to writing your first policy. Make sure you're set up in your Agency Tracker (agent.colburnfinancial.com). Let's get you to Ready to Write!%0D%0A%0D%0A— Mike, Colburn Agency"},
+    body:"Hi {{name}},%0D%0A%0D%0AWelcome to FASTTRACK -- your accelerated path to writing your first policy. Make sure you're set up in your Agency Tracker (tracker.colburnfinancial.com). Let's get you to Ready to Write!%0D%0A%0D%0A— Mike, Colburn Agency"},
   rtw:{text:"Congrats {{name}} — you're Ready to Write! Let's get your first application submitted. What can I help with to write your first policy?",
     subject:"You're Ready to Write — let's get your first app!",
     body:"Hi {{name}},%0D%0A%0D%0AYou're officially Ready to Write! Our next milestone is your first submitted application. Let's set up time to make sure you're ready.%0D%0A%0D%0A— Mike, Colburn Agency"},
