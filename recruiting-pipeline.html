@@ -461,7 +461,7 @@ const TEMPLATES = {
 
 /* Editable lists. New entries added in the app are saved automatically. */
 const DEFAULT_SOURCES=['Craigslist','Spark Recruiting','LinkedIn','Warm Market','WallStreetJobs','Indeed','Landing Page','Referral','Other'];
-const DEFAULT_RECRUITERS=['Mike Colburn','Jennifer Colburn'];
+const DEFAULT_RECRUITERS=[]; // recruiters come from the Team table (⚙ Team), not hardcoded
 
 /* ---------- State + Supabase (shared database) ---------- */
 const SUPA_URL='https://vrtnbucwukxdkiisndnk.supabase.co';
@@ -756,11 +756,10 @@ async function loadTeam(){
   try{
     const {data,error}=await SB.from('recruiter_emails').select('name,email,active').order('name',{ascending:true});
     if(error)return;
-    const names=(data||[]).filter(t=>t.active!==false).map(t=>t.name).filter(Boolean);
-    // Merge DB recruiter names into the dropdown list (union, preserve order: DB first).
-    const merged=[...names];
-    RECRUITERS.forEach(n=>{ if(n&&!merged.includes(n))merged.push(n); });
-    if(merged.length){RECRUITERS=merged;saveList(RKEY,RECRUITERS);}
+    // The Team table is the single source of truth. Only show active recruiters
+    // who actually have a login (an email on file) — no stale local names.
+    RECRUITERS=(data||[]).filter(t=>t.active!==false && (t.email||'').trim()).map(t=>t.name).filter(Boolean);
+    saveList(RKEY,RECRUITERS);
   }catch(e){}
 }
 async function openTeam(){
@@ -914,6 +913,13 @@ function onSourceChange(){const el=document.getElementById('f_source');
   if(el.value==='__add__'){const n=(prompt('New source name (e.g. LinkedIn, Warm Market, WallStreetJobs):')||'').trim();
     if(n&&!SOURCES.includes(n)){SOURCES.push(n);saveList(SKEY,SOURCES);}
     fillSelect(el,SOURCES,n||SOURCES[0]);}}
+/* Recruiter assignment: pick only from the real team (added in ⚙ Team). No ad-hoc names. */
+function fillRecruiterSelect(el,val){
+  let opts=RECRUITERS.slice();
+  if(val && !opts.includes(val)) opts=[val,...opts]; // keep a recruit's existing (off-team) agent visible
+  el.innerHTML=opts.map(o=>`<option>${esc(o)}</option>`).join('');
+  el.value=(val&&opts.includes(val))?val:(opts[0]||'');
+}
 function onRecruiterChange(){const el=document.getElementById('f_recruiter');
   if(el.value==='__add__'){const n=(prompt('New recruiting agent name:')||'').trim();
     if(n&&!RECRUITERS.includes(n)){RECRUITERS.push(n);saveList(RKEY,RECRUITERS);populateRecFilter();}
@@ -932,7 +938,7 @@ function openAdd(stage){
   document.getElementById('delbtn').style.display='none';
   f('name','');f('phone','');f('email','');
   fillSelect(document.getElementById('f_source'),SOURCES,SOURCES[0]);
-  fillSelect(document.getElementById('f_recruiter'),RECRUITERS,filterRecruiter||RECRUITERS[0]);
+  fillRecruiterSelect(document.getElementById('f_recruiter'),filterRecruiter||RECRUITERS[0]||'');
   lockRecruiterField(MY_NAME);
   document.getElementById('f_license').value='unlicensed';
   document.getElementById('f_stage').value=stage||'interview';
@@ -951,7 +957,7 @@ function openEdit(id){
   document.getElementById('delbtn').style.display='';
   f('name',r.name);f('phone',r.phone);f('email',r.email);
   fillSelect(document.getElementById('f_source'),SOURCES,r.source||'Other');
-  fillSelect(document.getElementById('f_recruiter'),RECRUITERS,r.recruiter||'Unassigned');
+  fillRecruiterSelect(document.getElementById('f_recruiter'),r.recruiter||'');
   lockRecruiterField(r.recruiter||MY_NAME);
   document.getElementById('f_license').value=r.license||'unlicensed';
   document.getElementById('f_stage').value=r.stage;
