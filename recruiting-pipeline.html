@@ -174,6 +174,7 @@
     <a class="btn-ghost" href="https://agent.colburnfinancial.com" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
     <button class="btn-ghost" onclick="openSettings()">⚙ Settings</button>
     <button class="btn-ghost" onclick="openStages()">⚙ Stages</button>
+    <button class="btn-ghost" onclick="openDrips()">⚙ Drips</button>
     <button class="btn-ghost" onclick="exportData()">Export</button>
     <button class="btn-ghost" onclick="document.getElementById('imp').click()">Import</button>
     <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(event)" />
@@ -294,6 +295,32 @@
     </div>
   </div>
 </div>
+
+<!-- Drips Editor modal (time-based follow-up emails) -->
+<div class="scrim" id="dripScrim">
+  <div class="modal" style="width:760px;max-width:100%">
+    <h2>⚙ Time-based Drips <button class="x" onclick="closeDrips()">×</button></h2>
+    <div class="mbody" id="dripBody" style="max-height:64vh;overflow:auto">Loading…</div>
+    <div class="mbody" style="padding-top:0"><button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="addDripRow()">+ Add drip</button></div>
+    <div class="mfoot">
+      <span style="margin-right:auto;color:var(--muted);font-size:11.5px">Auto-emails sent N days after a recruit enters a stage. <b>After</b> = days to wait. <b>Repeat</b> = 0 once, or every N days. Merge field: {{name}}. Runs daily.</span>
+      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeDrips()">Cancel</button>
+      <button class="btn-navy" onclick="saveDrips()">Save</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .drip-row{border:1px solid #e3e9f0;border-radius:10px;padding:10px;margin-bottom:10px;background:#fafbfd}
+  .drip-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
+  .drip-top select,.drip-top input.drip-label{flex:1;min-width:120px}
+  .drip-num{width:64px}
+  .drip-row input,.drip-row textarea,.drip-row select{padding:6px 8px;border:1px solid #cdd7e3;border-radius:7px;font:inherit}
+  .drip-row textarea{width:100%;min-height:56px;resize:vertical;box-sizing:border-box}
+  .drip-row input.drip-sub{width:100%;box-sizing:border-box;margin-bottom:6px}
+  .drip-lbl{font-size:11px;color:var(--muted)}
+  .drip-del{margin-left:auto;background:#fdecec;color:#b3261e;border:none;border-radius:7px;padding:6px 10px;cursor:pointer}
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -595,6 +622,55 @@ async function saveStages(){
   await loadStages();fillStageSelect();render();
 }
 function closeStages(){document.getElementById('stageScrim').classList.remove('open');}
+
+/* ---------- Drips Editor (time-based follow-up emails — edits the `drips` table) ---------- */
+let _dripRows=[], _dripDeleted=[];
+async function openDrips(){
+  document.getElementById('dripScrim').classList.add('open');
+  const box=document.getElementById('dripBody');box.innerHTML='Loading…';
+  const {data,error}=await SB.from('drips').select('*').order('stage',{ascending:true}).order('offset_days',{ascending:true});
+  if(error){box.innerHTML='Could not load: '+esc(error.message);return;}
+  _dripRows=(data||[]).map(d=>({id:d.id,stage:d.stage,label:d.label||'',subject:d.subject||'',body:d.body||'',
+    offset_days:d.offset_days==null?0:d.offset_days,repeat_days:d.repeat_days==null?0:d.repeat_days,enabled:d.enabled!==false}));
+  _dripDeleted=[];
+  renderDripRows();
+}
+function stageOptions(sel){
+  return STAGES.map(st=>`<option value="${st.id}" ${st.id===sel?'selected':''}>${esc(st.name)}</option>`).join('');
+}
+function renderDripRows(){
+  const box=document.getElementById('dripBody');
+  if(!_dripRows.length){box.innerHTML='<p style="color:var(--muted)">No drips yet. Click “+ Add drip”.</p>';return;}
+  box.innerHTML=_dripRows.map((d,i)=>`
+    <div class="drip-row">
+      <div class="drip-top">
+        <select onchange="_dripRows[${i}].stage=this.value">${stageOptions(d.stage)}</select>
+        <input class="drip-label" placeholder="Label (e.g. First-app nudge)" value="${esc(d.label)}" oninput="_dripRows[${i}].label=this.value">
+        <span class="drip-lbl">After</span>
+        <input type="number" min="0" class="drip-num" value="${d.offset_days}" oninput="_dripRows[${i}].offset_days=parseInt(this.value)||0"><span class="drip-lbl">d</span>
+        <span class="drip-lbl">Repeat</span>
+        <input type="number" min="0" class="drip-num" value="${d.repeat_days}" oninput="_dripRows[${i}].repeat_days=parseInt(this.value)||0"><span class="drip-lbl">d</span>
+        <label class="drip-lbl"><input type="checkbox" ${d.enabled?'checked':''} onchange="_dripRows[${i}].enabled=this.checked"> on</label>
+        <button class="drip-del" onclick="removeDripRow(${i})">Delete</button>
+      </div>
+      <input class="drip-sub" placeholder="Email subject" value="${esc(d.subject)}" oninput="_dripRows[${i}].subject=this.value">
+      <textarea placeholder="Email body — use {{name}} for first name" oninput="_dripRows[${i}].body=this.value">${esc(d.body)}</textarea>
+    </div>`).join('');
+}
+function addDripRow(){_dripRows.push({id:'',stage:(STAGES[0]&&STAGES[0].id)||'',label:'',subject:'',body:'',offset_days:3,repeat_days:0,enabled:true});renderDripRows();}
+function removeDripRow(i){const d=_dripRows[i];if(d&&d.id)_dripDeleted.push(d.id);_dripRows.splice(i,1);renderDripRows();}
+async function saveDrips(){
+  const valid=_dripRows.filter(d=>(d.stage||'').trim()&&(d.subject||'').trim()&&(d.body||'').trim());
+  const updates=valid.filter(d=>d.id).map(d=>({id:d.id,stage:d.stage,label:d.label||d.stage,subject:d.subject,body:d.body,offset_days:d.offset_days,repeat_days:d.repeat_days,enabled:d.enabled}));
+  const inserts=valid.filter(d=>!d.id).map(d=>({stage:d.stage,label:d.label||d.stage,subject:d.subject,body:d.body,offset_days:d.offset_days,repeat_days:d.repeat_days,enabled:d.enabled}));
+  try{
+    if(_dripDeleted.length){const {error}=await SB.from('drips').delete().in('id',_dripDeleted);if(error)throw error;}
+    if(updates.length){const {error}=await SB.from('drips').upsert(updates,{onConflict:'id'});if(error)throw error;}
+    if(inserts.length){const {error}=await SB.from('drips').insert(inserts);if(error)throw error;}
+  }catch(e){alert('Save failed: '+(e.message||e));return;}
+  alert('Drips saved — the daily scheduler will use them on its next run.');closeDrips();
+}
+function closeDrips(){document.getElementById('dripScrim').classList.remove('open');}
 function toISO(d){const t=new Date(d);return isNaN(t)?'':t.toISOString().slice(0,10);}
 function parseJI(text){
   const re=/(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+([\d.]+)%\s+(?:(\d{1,2}\/\d{1,2}\/\d{4})\s+)?([A-Za-z'.\-]+)\s+([A-Za-z'.\-]+)\s+(\+?\d{10,})\s+(\S+@\S+)\s+([\s\S]+?)\s+([\d.]+)%(?=\s|$)/g;
