@@ -333,14 +333,30 @@
 
 <!-- Team Editor modal (recruiters + their reply emails) -->
 <div class="scrim" id="teamScrim">
-  <div class="modal" style="width:640px;max-width:100%">
-    <h2>⚙ Team <button class="x" onclick="closeTeam()">×</button></h2>
-    <div class="mbody" id="teamBody" style="max-height:60vh;overflow:auto">Loading…</div>
-    <div class="mbody" style="padding-top:0"><button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="addTeamRow()">+ Add recruiter</button></div>
+  <div class="modal" style="width:760px;max-width:100%">
+    <h2>⚙ Team &amp; Logins <button class="x" onclick="closeTeam()">×</button></h2>
+    <div class="mbody" style="max-height:66vh;overflow:auto">
+      <div class="addrec">
+        <div class="addrec-title">➕ Add a recruiter (creates their login)</div>
+        <div class="addrec-grid">
+          <input id="ar_name" placeholder="Full name">
+          <input id="ar_email" type="email" placeholder="Login email">
+          <select id="ar_role"><option value="recruiter">Recruiter</option><option value="admin">Admin</option></select>
+          <div class="addrec-pw">
+            <input id="ar_pw" placeholder="Temp password">
+            <button type="button" onclick="genPw('ar_pw')">Generate</button>
+          </div>
+          <button class="ar-create" onclick="createRecruiter(this)">Create login + add</button>
+        </div>
+        <div id="ar_msg" class="addrec-msg"></div>
+      </div>
+      <div class="team-list-title">Current team</div>
+      <div id="teamBody">Loading…</div>
+    </div>
     <div class="mfoot">
-      <span style="margin-right:auto;color:var(--muted);font-size:11.5px">Emails to a recruit show this recruiter's <b>name</b> as the sender and route replies to their email. Personal Gmail works fine.</span>
-      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeTeam()">Cancel</button>
-      <button class="btn-navy" onclick="saveTeam()">Save</button>
+      <span style="margin-right:auto;color:var(--muted);font-size:11.5px"><b>Name</b> must match the "Recruiting agent" on their recruits. Recruiters see only their own; Admins see everything.</span>
+      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeTeam()">Close</button>
+      <button class="btn-navy" onclick="saveTeam()">Save name/role</button>
     </div>
   </div>
 </div>
@@ -353,6 +369,21 @@
   .team-row .tm-role{flex:0 0 108px;width:108px;padding:7px 8px;border:1px solid #cdd7e3;border-radius:7px;font:inherit;background:#fff;color:#102a4a}
   .team-row label{font-size:11px;color:var(--muted);white-space:nowrap}
   .team-del{background:#fdecec;color:#b3261e;border:none;border-radius:7px;padding:7px 10px;cursor:pointer}
+  .addrec{background:#0c2240;border-radius:12px;padding:14px 16px;margin-bottom:16px}
+  .addrec-title{color:#fff;font-weight:700;font-size:14px;margin-bottom:10px}
+  .addrec-grid{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .addrec-grid input,.addrec-grid select{padding:8px 10px;border:none;border-radius:8px;font:inherit}
+  .addrec-grid #ar_name{flex:1;min-width:120px}.addrec-grid #ar_email{flex:1.3;min-width:150px}
+  .addrec-grid #ar_role{flex:0 0 110px;color:#102a4a;background:#fff}
+  .addrec-pw{display:flex;gap:6px;flex:1.3;min-width:170px}
+  .addrec-pw input{flex:1;min-width:90px}
+  .addrec-pw button{background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer;font-size:12px}
+  .ar-create{background:var(--gold);color:var(--navy);border:none;border-radius:9px;padding:9px 14px;font-weight:800;cursor:pointer}
+  .ar-create:disabled{opacity:.7;cursor:default}
+  .addrec-msg{color:#fff;font-size:12.5px;margin-top:9px;min-height:16px;word-break:break-word}
+  .team-list-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:4px 0 8px}
+  .tm-emailro{flex:1.3;min-width:150px;color:var(--navy3);font-size:13px;display:flex;align-items:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tm-pw{background:#eef2f7;color:var(--navy3);border:none;border-radius:7px;padding:7px 9px;cursor:pointer;font-size:12px}
 </style>
 
 <style>
@@ -734,43 +765,102 @@ async function loadTeam(){
 }
 async function openTeam(){
   document.getElementById('teamScrim').classList.add('open');
-  const box=document.getElementById('teamBody');box.innerHTML='Loading…';
+  ['ar_name','ar_email','ar_pw'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const arr=document.getElementById('ar_role');if(arr)arr.value='recruiter';
+  const m=document.getElementById('ar_msg');if(m)m.textContent='';
+  await teamRefresh(true);
+}
+async function teamRefresh(showLoading){
+  const box=document.getElementById('teamBody');if(showLoading)box.innerHTML='Loading…';
   const {data,error}=await SB.from('recruiter_emails').select('*').order('name',{ascending:true});
   if(error){box.innerHTML='Could not load: '+esc(error.message);return;}
   _teamRows=(data||[]).map(t=>({name:t.name,email:t.email||'',active:t.active!==false,role:t.role||'recruiter',_orig:t.name}));
-  _teamDeleted=[];
   renderTeamRows();
+  await loadTeam();populateRecFilter();
 }
 function renderTeamRows(){
   const box=document.getElementById('teamBody');
-  if(!_teamRows.length){box.innerHTML='<p style="color:var(--muted)">No recruiters yet. Click “+ Add recruiter”.</p>';return;}
+  if(!_teamRows.length){box.innerHTML='<p style="color:var(--muted)">No recruiters yet — add one above.</p>';return;}
   box.innerHTML=_teamRows.map((t,i)=>`
     <div class="team-row">
-      <input class="tm-name" placeholder="Recruiter name" value="${esc(t.name)}" oninput="_teamRows[${i}].name=this.value">
-      <input class="tm-email" type="email" placeholder="reply email (their Gmail)" value="${esc(t.email)}" oninput="_teamRows[${i}].email=this.value">
+      <input class="tm-name" placeholder="Name" value="${esc(t.name)}" oninput="_teamRows[${i}].name=this.value">
+      <span class="tm-emailro" title="${esc(t.email)}">${esc(t.email||'(no login)')}</span>
       <select class="tm-role" onchange="_teamRows[${i}].role=this.value" title="Admin = full access; Recruiter = only their own recruits">
         <option value="recruiter" ${t.role!=='admin'?'selected':''}>Recruiter</option>
         <option value="admin" ${t.role==='admin'?'selected':''}>Admin</option>
       </select>
       <label><input type="checkbox" ${t.active?'checked':''} onchange="_teamRows[${i}].active=this.checked"> active</label>
-      <button class="team-del" onclick="removeTeamRow(${i})">Delete</button>
+      <button class="tm-pw" onclick="resetPw(${i})" title="Set a new temporary password">Reset PW</button>
+      <button class="team-del" onclick="removeRecruiter(${i})">Remove</button>
     </div>`).join('');
 }
-function addTeamRow(){_teamRows.push({name:'',email:'',active:true,role:'recruiter',_orig:''});renderTeamRows();}
-function removeTeamRow(i){const t=_teamRows[i];if(t&&t._orig)_teamDeleted.push(t._orig);_teamRows.splice(i,1);renderTeamRows();}
+function genPw(id){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let p='';for(let i=0;i<12;i++)p+=chars[Math.floor(Math.random()*chars.length)];
+  if(id){const el=document.getElementById(id);if(el)el.value=p;}
+  return p;
+}
+async function adminTeamCall(payload){
+  const {data:{session}}=await SB.auth.getSession();
+  const token=(session&&session.access_token)||SUPA_KEY;
+  const r=await fetch(SUPA_URL+'/functions/v1/admin-team',{method:'POST',
+    headers:{'Authorization':'Bearer '+token,'apikey':SUPA_KEY,'content-type':'application/json'},
+    body:JSON.stringify(payload)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||d.error)throw new Error(d.error||('Request failed ('+r.status+')'));
+  return d;
+}
+async function createRecruiter(btn){
+  const name=document.getElementById('ar_name').value.trim();
+  const email=document.getElementById('ar_email').value.trim();
+  const role=document.getElementById('ar_role').value;
+  let pw=document.getElementById('ar_pw').value.trim();
+  const msg=document.getElementById('ar_msg');
+  if(!name||!email){msg.style.color='#ffd27a';msg.textContent='Enter a name and email first.';return;}
+  if(!pw)pw=genPw('ar_pw');
+  if(pw.length<6){msg.style.color='#ffd27a';msg.textContent='Password must be at least 6 characters.';return;}
+  const o=btn.textContent;btn.disabled=true;btn.textContent='Creating…';msg.textContent='';
+  try{
+    await adminTeamCall({action:'create',name,email,password:pw,role});
+    msg.style.color='#7ee6b0';
+    msg.innerHTML='✓ Login created. Give '+esc(name)+' these and the site recruiting.colburnfinancial.com — Email: <b>'+esc(email)+'</b> &nbsp; Password: <b>'+esc(pw)+'</b>';
+    ['ar_name','ar_email','ar_pw'].forEach(id=>document.getElementById(id).value='');
+    await teamRefresh(false);
+  }catch(e){msg.style.color='#ffb4b4';msg.textContent='Could not create: '+(e.message||e);}
+  btn.disabled=false;btn.textContent=o;
+}
+async function resetPw(i){
+  const t=_teamRows[i];if(!t)return;
+  if(!t.email){alert(t.name+' has no login email on file.');return;}
+  const pw=genPw();
+  if(!confirm('Reset '+t.name+'’s password to a new temporary one?\n\n'+pw+'\n\n(You’ll see it again in the panel to copy.)'))return;
+  try{
+    await adminTeamCall({action:'setpw',email:t.email,password:pw});
+    const msg=document.getElementById('ar_msg');msg.style.color='#7ee6b0';
+    msg.innerHTML='✓ Password reset for '+esc(t.name)+' — new password: <b>'+esc(pw)+'</b>. Share it with them.';
+  }catch(e){alert('Reset failed: '+(e.message||e));}
+}
+async function removeRecruiter(i){
+  const t=_teamRows[i];if(!t)return;
+  if(!confirm('Remove '+t.name+' and delete their login? This cannot be undone.'))return;
+  try{
+    if(t.email)await adminTeamCall({action:'delete',email:t.email});
+    else{const {error}=await SB.from('recruiter_emails').delete().eq('name',t.name);if(error)throw error;}
+    const msg=document.getElementById('ar_msg');msg.style.color='#cdddf0';msg.textContent='Removed '+t.name+'.';
+    await teamRefresh(false);
+  }catch(e){alert('Remove failed: '+(e.message||e));}
+}
 async function saveTeam(){
   const valid=_teamRows.filter(t=>(t.name||'').trim());
-  const rows=valid.map(t=>({name:t.name.trim(),email:(t.email||'').trim()||null,active:t.active,role:t.role||'recruiter'}));
-  // Names that were renamed: delete the old key so it doesn't linger.
-  valid.forEach(t=>{ if(t._orig && t._orig!==t.name.trim())_teamDeleted.push(t._orig); });
+  const rows=valid.map(t=>({name:t.name.trim(),email:(t.email||'')||null,active:t.active,role:t.role||'recruiter'}));
+  const renamedOld=[];
+  valid.forEach(t=>{ if(t._orig && t._orig!==t.name.trim())renamedOld.push(t._orig); });
   try{
-    if(_teamDeleted.length){const {error}=await SB.from('recruiter_emails').delete().in('name',_teamDeleted);if(error)throw error;}
     if(rows.length){const {error}=await SB.from('recruiter_emails').upsert(rows,{onConflict:'name'});if(error)throw error;}
+    if(renamedOld.length){const {error}=await SB.from('recruiter_emails').delete().in('name',renamedOld);if(error)throw error;}
   }catch(e){alert('Save failed: '+(e.message||e));return;}
-  await loadTeam();
-  fillSelect(document.getElementById('f_recruiter'),RECRUITERS,RECRUITERS[0]);
-  populateRecFilter();
-  alert('Team saved — recruiters and their reply emails are live.');closeTeam();
+  alert('Saved name/role changes.');
+  await teamRefresh(false);
 }
 function closeTeam(){document.getElementById('teamScrim').classList.remove('open');}
 function toISO(d){const t=new Date(d);return isNaN(t)?'':t.toISOString().slice(0,10);}
