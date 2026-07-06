@@ -46,6 +46,14 @@
   .radio input{display:none}
   .radio input:checked+span{color:var(--navy)}
   .radio label:has(input:checked){border-color:var(--gold);background:#fdf8ee;box-shadow:0 0 0 2px rgba(201,164,95,.2)}
+  .optcards{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+  .optcards label{display:flex;gap:11px;align-items:flex-start;text-transform:none;letter-spacing:0;
+    font-weight:600;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    cursor:pointer;margin:0;background:#fcfdfe;font-size:14px}
+  .optcards input{width:18px;height:18px;flex:none;margin-top:1px;accent-color:var(--gold)}
+  .optcards label:has(input:checked){border-color:var(--gold);background:#fdf8ee;box-shadow:0 0 0 2px rgba(201,164,95,.2)}
+  .optcards .ot b{display:block;font-size:14px;color:var(--navy);font-weight:800;margin-bottom:2px}
+  .optcards .ot em{font-style:normal;font-weight:500;color:var(--muted);font-size:12.6px;line-height:1.45}
   .secnote{background:#fff7e8;border:1px solid #f0dfb6;border-radius:10px;padding:12px 14px;font-size:12.8px;
     color:#7a5a16;display:flex;gap:9px;margin-top:4px}
   .steps{list-style:none;padding:0;margin:6px 0 0}
@@ -123,6 +131,17 @@
   <div class="card">
     <h2><span class="num">3</span> Licensing</h2>
     <p class="sub">This tells us whether you're ready to contract or need to complete licensing first.</p>
+    <label>License status <span class="req">*</span></label>
+    <div class="optcards" id="licstatus">
+      <label><input type="radio" name="License status" value="New">
+        <span class="ot"><b>New</b><em>Just received your license, or unlicensed with no prior industry experience — or experienced but not tied to another IMO (a free agent).</em></span></label>
+      <label><input type="radio" name="License status" value="Returning">
+        <span class="ot"><b>Returning</b><em>Previously contracted with SFG (Symmetry Financial Group).</em></span></label>
+      <label><input type="radio" name="License status" value="Transfer">
+        <span class="ot"><b>Transfer</b><em>Currently contracted under another IMO and not a free agent — locked with certain carriers.</em></span></label>
+      <label><input type="radio" name="License status" value="Advanced Market">
+        <span class="ot"><b>Advanced Market</b><em>Focused on ONLY Advanced Market solutions (IUL, IBC, DFL &amp; Annuities).</em></span></label>
+    </div>
     <label>Are you currently insurance licensed? <span class="req">*</span></label>
     <div class="radio">
       <label><input type="radio" name="Licensed" value="Yes — licensed" onchange="toggleLic(true)"><span>Yes, I'm licensed</span></label>
@@ -232,6 +251,7 @@ async function submitForm(){
     if(!el.value.trim()){el.style.borderColor='var(--bad)';ok=false;}
     else el.style.borderColor='';
   });
+  if(!document.querySelector('input[name="License status"]:checked')){ok=false;}
   if(!document.querySelector('input[name="Licensed"]:checked')){ok=false;}
   if(!ok){document.getElementById('formerr').style.display='block';
     window.scrollTo({top:0,behavior:'smooth'});return;}
@@ -244,7 +264,7 @@ async function submitForm(){
   // Build email
   let lines=['NEW AGENT CONTRACTING INFORMATION','=================================',''];
   const order=['First name','Middle name','Last name','Preferred name','Date of birth','Email','Mobile phone',
-    'Street','City','State','ZIP','Licensed','Resident state','NPN','Licensed states',
+    'Street','City','State','ZIP','License status','Licensed','Resident state','NPN','Licensed states',
     'Recruiting agent','Source'];
   order.forEach(k=>{if(lastData[k])lines.push(k+': '+lastData[k]);});
   lines.push('','Onboarding steps completed:');
