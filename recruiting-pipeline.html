@@ -518,20 +518,26 @@ async function loadStages(){
 function isLic(id){const s=STAGES.find(x=>x.id===id);return s?!!s.is_licensing:(id==='licensing');}
 /* Fire stage triggers: recruiter Slack alert + agent email (non-blocking — never interrupts the user) */
 async function notifySlack(event,recruit,stage){
+  // The email that fires is ALWAYS the one for the recruit's actual stage —
+  // whether they were just added into that stage or moved into it. No stage is
+  // ever assumed from the event type.
+  const stKey = stage || recruit.stage;
   try{ await SB.functions.invoke('notify-slack',{body:{event,
-    recruit:{name:recruit.name,recruiter:recruit.recruiter,source:recruit.source},stage}}); }
+    recruit:{name:recruit.name,recruiter:recruit.recruiter,source:recruit.source},stage:stKey}}); }
   catch(e){ console.warn('Slack notify skipped',e); }
   // Fire the stage email AS the assigned recruiter, and record whether it sent
   // so the card can show a status dot for this stage.
-  const stKey=(event==='new')?'interview':(stage||recruit.stage);
   let light='pending';
   try{
-    const {data,error}=await SB.functions.invoke('send-email',{body:{event,
-      recruit:{name:recruit.name,email:recruit.email,recruiter_name:recruit.recruiter},stage}});
+    // NOTE: we deliberately do NOT pass `event` here. The email to send is decided
+    // purely by the recruit's actual stage (stKey), so a recruit added straight into
+    // any stage gets THAT stage's email — never a stage assumed from the event type.
+    const {data,error}=await SB.functions.invoke('send-email',{body:{
+      recruit:{name:recruit.name,email:recruit.email,recruiter_name:recruit.recruiter,stage:stKey},stage:stKey}});
     if(error)light='failed';
     else{const s=data&&data.status;light=(s==='sent')?'sent':((s==='failed')?'failed':'pending');}
   }catch(e){light='failed';console.warn('Email send skipped',e);}
-  await setRecruitEmailStatus(recruit, recruit.stage, light);
+  await setRecruitEmailStatus(recruit, stKey, light);
 }
 async function setRecruitEmailStatus(recruit, stage, light){
   recruit.stage_emails=recruit.stage_emails||{};
