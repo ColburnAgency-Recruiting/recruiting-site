@@ -61,6 +61,12 @@
   .step:last-child{border-bottom:none}
   .step input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--gold)}
   .step .t{flex:1}.step .t b{display:block;font-size:13.5px}.step .t span{font-size:12px;color:var(--muted)}
+  .codechip{display:inline-flex;align-items:center;gap:8px;margin-top:8px;border:1px dashed var(--gold);
+    background:#fdf8ee;color:var(--navy);font-family:inherit;font-size:12.5px;font-weight:700;
+    padding:6px 11px;border-radius:8px;cursor:pointer;transition:background .15s,border-color .15s}
+  .codechip b{display:inline;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.6px;font-size:12.5px}
+  .codechip:hover{background:#faf1dc}
+  .codechip.copied{border-style:solid;border-color:var(--good);background:#e9f7ef;color:var(--good)}
   .step a{text-decoration:none;font-size:12.5px;font-weight:700;color:#fff;background:var(--navy3);
     padding:7px 13px;border-radius:8px;white-space:nowrap}
   .step a:hover{background:var(--navy2)}
@@ -191,7 +197,8 @@
         <div class="t"><b>Set Up Your Zoom Account</b><span>Our meetings &amp; client calls run on Zoom</span></div>
         <a href="https://zoom.us" target="_blank">Open</a></li>
       <li class="step"><input type="checkbox" name="step_event" />
-        <div class="t"><b>Register for the Next Event</b><span>Accelerate your start &middot; Use code <b>Colburn0706</b> for your discount ticket</span></div>
+        <div class="t"><b>Register for the Next Event</b><span>Accelerate your start &middot; copy your discount code, then click Register</span>
+          <button type="button" class="codechip" id="codechip" onclick="copyEventCode()"><span class="cc-label">📋 Copy code</span><b>Colburn0706</b></button></div>
         <a href="https://www.quilityevents.com/event/engage26/home" target="_blank">Register</a></li>
     </ul>
   </div>
@@ -230,6 +237,19 @@ const SUPA_URL='https://vrtnbucwukxdkiisndnk.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZydG5idWN3dWt4ZGtpaXNuZG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjQ5MTcsImV4cCI6MjA5NzkwMDkxN30.hjdRPeWHvTT27sCIZMhfgLuuntPloDoK8Cm2EPRFl2w';
 let lastData=null;
 
+function copyEventCode(){
+  const code='Colburn0706', chip=document.getElementById('codechip'), lbl=chip.querySelector('.cc-label');
+  const done=()=>{chip.classList.add('copied');lbl.textContent='✓ Copied!';
+    setTimeout(()=>{chip.classList.remove('copied');lbl.textContent='📋 Copy code';},2000);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(done).catch(()=>fallbackCopy(code,done));
+  } else fallbackCopy(code,done);
+}
+function fallbackCopy(text,cb){
+  const t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';
+  document.body.appendChild(t);t.focus();t.select();try{document.execCommand('copy');}catch(e){}
+  document.body.removeChild(t);cb&&cb();
+}
 function toggleLic(isLic){
   document.getElementById('licfields').style.display=isLic?'block':'none';
   document.getElementById('unlicnote').style.display=isLic?'none':'flex';
