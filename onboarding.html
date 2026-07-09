@@ -48,6 +48,12 @@
   .step a.go{display:inline-flex;align-items:center;gap:7px;text-decoration:none;background:var(--navy);color:#fff;
     font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:9px}
   .step a.go:hover{background:var(--navy2)}
+  .codechip{display:inline-flex;align-items:center;gap:8px;margin-left:10px;vertical-align:middle;
+    border:1px dashed var(--gold);background:#fdf8ee;color:var(--navy);font-family:inherit;font-size:13px;
+    font-weight:700;padding:8px 13px;border-radius:9px;cursor:pointer;transition:background .15s,border-color .15s}
+  .codechip b{display:inline;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.6px;font-size:13px}
+  .codechip:hover{background:#faf1dc}
+  .codechip.copied{border-style:solid;border-color:var(--good);background:#e9f7ef;color:var(--good)}
   .step .req{display:inline-block;margin-left:9px;font-size:10.5px;font-weight:800;color:#9a5a18;
     background:#fbeede;padding:2px 8px;border-radius:20px;vertical-align:middle}
   .cta{background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border-radius:16px;
@@ -140,8 +146,9 @@
     <div>
       <div class="n">Step 5</div>
       <h3>Register for Our Next Events: Engage &amp; Ignite</h3>
-      <p>Accelerate your start by attending our upcoming training and networking events.</p>
+      <p>Accelerate your start by attending our upcoming training and networking events. Copy your discount code, then register.</p>
       <a class="go" href="https://www.quilityevents.com/event/engage26/home" target="_blank" onclick="markDone('event')">Register for Engage →</a>
+      <button type="button" class="codechip" id="codechip" onclick="copyEventCode()"><span class="cc-label">📋 Copy code</span><b>Colburn0706</b></button>
     </div>
   </div>
 
@@ -217,6 +224,19 @@ async function finishOnboarding(btn){
 }
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==='object')return d;}catch(e){}return {};}
 function save(){localStorage.setItem(KEY,JSON.stringify(done));}
+function copyEventCode(){
+  const code='Colburn0706', chip=document.getElementById('codechip'), lbl=chip.querySelector('.cc-label');
+  const done=()=>{chip.classList.add('copied');lbl.textContent='✓ Copied!';
+    setTimeout(()=>{chip.classList.remove('copied');lbl.textContent='📋 Copy code';},2000);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(done).catch(()=>fallbackCopy(code,done));
+  } else fallbackCopy(code,done);
+}
+function fallbackCopy(text,cb){
+  const t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';
+  document.body.appendChild(t);t.focus();t.select();try{document.execCommand('copy');}catch(e){}
+  document.body.removeChild(t);cb&&cb();
+}
 function toggle(id){done[id]=!done[id];save();render();}
 function markDone(id){if(!done[id]){done[id]=true;save();render();}} // auto-check when they open the link
 function render(){
