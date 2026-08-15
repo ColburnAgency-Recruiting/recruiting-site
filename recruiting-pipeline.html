@@ -370,6 +370,11 @@
   .unm-att{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:8px 14px;
     font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
   .unm-att:disabled{opacity:.6;cursor:default}
+  .unm-del{background:#fdecec;color:#b3261e;border:1px solid #f3c9c6;border-radius:7px;
+    padding:8px 13px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .unm-del:hover{background:#fbdedd}
+  .unm-del.arm{background:#c5544c;border-color:#c5544c;color:#fff}
+  .unm-del:disabled{opacity:.6;cursor:default}
   .unm-det{margin-top:9px;font-size:12.5px}
   .unm-det summary{cursor:pointer;color:var(--navy3);font-weight:700}
   .unm-row{display:flex;gap:10px;padding:3px 0;border-bottom:1px solid #eef2f7}
@@ -1139,6 +1144,8 @@ function renderUnmatched(){
       <div class="unm-act">
         <select id="unmsel_${i}"><option value="">Attach to which recruit…</option>${opts}</select>
         <button class="unm-att" onclick="attachSubmission(${i},this)">Attach</button>
+        <button class="unm-del" onclick="deleteSubmission(${i},this)"
+                title="Permanently remove this submission">Delete</button>
       </div>
       <div class="unm-msg" id="unmmsg_${i}"></div>
       <details class="unm-det"><summary>See everything they submitted</summary>${rows||'<i>No fields</i>'}</details>
@@ -1194,6 +1201,46 @@ async function attachSubmission(i,btn){
     msg.style.color='#c5544c';
     msg.textContent='Could not attach — '+((e&&e.message)||'please try again.');
     btn.disabled=false;btn.textContent=orig;
+  }
+}
+
+/* Delete a submission outright - for test entries and junk, not real recruits.
+   Two-step on purpose: the first click arms the button, the second commits.
+   No browser confirm() dialog, which blocks the page and cannot be styled.
+   Requires the fs_delete RLS policy (admins only); without it Postgres filters
+   the row out and reports success having deleted nothing, so we check the
+   affected count and say so rather than pretending it worked. */
+const _armedDel = {};
+function disarmDel(id, btn){
+  if(_armedDel[id]){clearTimeout(_armedDel[id]);delete _armedDel[id];}
+  if(btn){btn.classList.remove('arm');btn.textContent='Delete';}
+}
+async function deleteSubmission(i, btn){
+  const f=_unm[i]; if(!f)return;
+  const msg=document.getElementById('unmmsg_'+i);
+
+  if(!_armedDel[f.id]){
+    btn.classList.add('arm');btn.textContent='Click again to delete';
+    msg.style.color='#b3261e';
+    msg.textContent='This permanently removes the submission. It cannot be undone.';
+    _armedDel[f.id]=setTimeout(()=>{disarmDel(f.id,btn);msg.textContent='';},5000);
+    return;
+  }
+
+  disarmDel(f.id,btn);
+  btn.disabled=true;btn.textContent='Deleting...';msg.textContent='';
+  try{
+    const {error,count}=await SB.from('form_submissions')
+      .delete({count:'exact'}).eq('id',f.id);
+    if(error)throw error;
+    if(!count) throw new Error('nothing was deleted - this is admin-only, check your access');
+    _unm.splice(i,1);
+    renderUnmatched();
+    updateUnmatchedBadge();
+  }catch(e){
+    msg.style.color='#b3261e';
+    msg.textContent='Could not delete - '+((e&&e.message)||'please try again.');
+    btn.disabled=false;btn.classList.remove('arm');btn.textContent='Delete';
   }
 }
 
