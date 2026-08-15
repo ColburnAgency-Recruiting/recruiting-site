@@ -94,6 +94,25 @@
   .stg-act{display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted);margin:0;white-space:nowrap}
   .syncbox{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
   .syncres{margin-top:12px;font-size:12.5px}
+  .drop{border:2px dashed #cdd7e3;border-radius:12px;padding:22px 18px;text-align:center;
+    background:#fafbfd;cursor:pointer;transition:.15s;margin-bottom:6px}
+  .drop:hover,.drop.over{border-color:var(--gold);background:#fdf8ee}
+  .drop b{display:block;color:var(--navy);font-size:14px;margin-bottom:3px}
+  .drop span{color:var(--muted);font-size:12.5px}
+  .drop .fname{display:inline-block;margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:12px;color:var(--navy3);background:#eef2f7;padding:3px 9px;border-radius:6px}
+  .synctabs{display:flex;gap:6px;margin-bottom:10px}
+  .synctabs button{flex:1;background:#eef2f7;color:var(--navy3);border:none;border-radius:8px;
+    padding:8px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .synctabs button.on{background:var(--navy);color:#fff}
+  .maptbl{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
+  .maptbl th{text-align:left;color:var(--muted);font-weight:700;padding:4px 6px;border-bottom:1px solid var(--line)}
+  .maptbl td{padding:4px 6px;border-bottom:1px solid #eef2f7}
+  .maptbl .got{color:var(--good);font-weight:700}
+  .maptbl .nope{color:var(--warn)}
+  .prevbox{background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px}
+  .prevbox h4{margin:0 0 6px;font-size:13.5px;color:var(--navy)}
+  .prevlist{max-height:150px;overflow:auto;font-size:12px;color:var(--muted);line-height:1.6}
   .syncres .ok{color:var(--good);font-weight:700}.syncres .miss{color:var(--warn)}
   .card .quick{display:flex;gap:6px;margin-top:9px}
   .card .quick a{flex:1;text-align:center;text-decoration:none;font-size:11px;font-weight:700;
@@ -272,14 +291,47 @@
     <h2>⟳ Sync Licensing from JustInsurance <button class="x" onclick="closeSync()">×</button></h2>
     <div class="mbody">
       <p style="margin:0 0 10px;color:var(--muted);font-size:13px">
-        Paste your daily <b>JustInsurance Training Report</b> (the per-agent table) below and click Sync.
-        Recruits are matched by <b>email</b>; their course %, exam prep %, and last login update automatically.</p>
-      <textarea id="syncbox" class="syncbox" placeholder="Paste the Training Report email text here (Date Enrolled, Last Login, % Complete, … Email, Course, Exam Prep %)"></textarea>
+        Update licensing progress from your daily <b>JustInsurance</b> report. Recruits are matched by
+        <b>email</b>; course %, exam prep %, last login and course name update automatically.
+        Nothing is written until you review the preview.</p>
+
+      <div class="synctabs">
+        <button id="tab_csv" class="on" onclick="syncTab('csv')">Upload CSV</button>
+        <button id="tab_paste" onclick="syncTab('paste')">Paste report text</button>
+      </div>
+
+      <div id="pane_csv">
+        <div class="drop" id="dropzone" onclick="document.getElementById('csvfile').click()">
+          <b>Drop your CSV here, or click to choose</b>
+          <span>Exported from JustInsurance. Column order doesn't matter &mdash; it reads the headers.</span>
+          <div id="csvname"></div>
+        </div>
+        <input type="file" id="csvfile" accept=".csv,text/csv" style="display:none"
+               onchange="handleCsvFile(this.files[0])">
+      </div>
+
+      <div id="pane_paste" style="display:none">
+        <textarea id="syncbox" class="syncbox" placeholder="Paste the Training Report email text here (Date Enrolled, Last Login, % Complete, … Email, Course, Exam Prep %)"></textarea>
+        <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3);margin-top:8px"
+                onclick="previewPaste()">Read pasted report</button>
+      </div>
+
+      <label style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:12.8px;
+                    color:var(--ink);background:#fff7e8;border:1px solid #f0dfb6;border-radius:10px;
+                    padding:11px 13px;text-transform:none;letter-spacing:0;font-weight:400;line-height:1.5">
+        <input type="checkbox" id="syncstage" style="width:17px;height:17px;margin-top:1px;accent-color:var(--gold)"
+               onchange="if(_lastPreview)showPreview(_lastPreview.rows,_lastPreview.map,_lastPreview.header)">
+        <span><b>Also move recruits between stages.</b> Off by default, because moving a stage
+        sends that stage's email. This report marks the <b>pre-licensing course</b> complete, which is
+        not the same as passing the state exam &mdash; leaving this off updates progress only.</span>
+      </label>
+
       <div class="syncres" id="syncres"></div>
     </div>
     <div class="mfoot">
       <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3);margin-left:auto" onclick="closeSync()">Close</button>
-      <button class="btn-navy" onclick="runSync()">Sync</button>
+      <button class="btn-navy" id="syncapply" onclick="applySync()" disabled
+              style="opacity:.5">Apply updates</button>
     </div>
   </div>
 </div>
@@ -713,8 +765,26 @@ function licBlock(r){
       :dl!==null?`<div class="lic-row sub ${stale?'stale':''}">Last login: ${dl}d ago${stale?' · encourage them!':''}</div>`:''}
   </div>`;
 }
-function openSync(){document.getElementById('syncscrim').classList.add('open');
-  document.getElementById('syncbox').value='';document.getElementById('syncres').innerHTML='';}
+function openSync(){
+  document.getElementById('syncscrim').classList.add('open');
+  document.getElementById('syncbox').value='';
+  document.getElementById('syncres').innerHTML='';
+  document.getElementById('csvname').innerHTML='';
+  document.getElementById('csvfile').value='';
+  _syncRows=[]; _lastPreview=null; setApply(false); syncTab('csv');
+  const box=document.getElementById('syncstage'); if(box) box.checked=false;
+}
+function syncTab(which){
+  const csv = which==='csv';
+  document.getElementById('pane_csv').style.display   = csv?'':'none';
+  document.getElementById('pane_paste').style.display = csv?'none':'';
+  document.getElementById('tab_csv').classList.toggle('on', csv);
+  document.getElementById('tab_paste').classList.toggle('on', !csv);
+}
+function setApply(on){
+  const b=document.getElementById('syncapply');
+  b.disabled=!on; b.style.opacity=on?'1':'.5';
+}
 function closeSync(){document.getElementById('syncscrim').classList.remove('open');}
 
 /* ---------- Message Settings (edit email/Slack copy, no code) ---------- */
@@ -971,27 +1041,245 @@ function parseJI(text){
     course:m[9].replace(/\s+/g,' ').trim(),exam:parseFloat(m[10])});}
   return out;
 }
-async function runSync(){
+/* ================= JustInsurance licensing sync =================
+   Two input paths, one apply step:
+     - CSV upload (preferred)  -> parseCSV + header mapping
+     - pasted report text      -> parseJI (the original whitespace regex)
+   Both produce the same row shape, get previewed, and are only written to the
+   database when the user clicks Apply. Nothing auto-saves.
+================================================================== */
+let _syncRows = [];
+let _lastPreview = null;
+
+/* RFC4180-ish CSV reader: handles quoted fields, embedded commas and newlines,
+   escaped "" quotes, CRLF, and a UTF-8 BOM. */
+function parseCSV(text){
+  text = String(text||'').replace(/^\uFEFF/, '');
+  const rows=[]; let row=[], field='', inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; }
+      else field+=c;
+    } else if(c==='"'){ inQ=true; }
+    else if(c===','){ row.push(field); field=''; }
+    else if(c==='\n'){ row.push(field); field=''; rows.push(row); row=[]; }
+    else if(c==='\r'){ /* handled by \n */ }
+    else field+=c;
+  }
+  if(field.length||row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=>r.some(v=>String(v).trim()!==''));
+}
+
+/* Header aliases. JustInsurance wording has shifted before, so match loosely
+   rather than pinning to one exact spelling. */
+const JI_FIELDS = {
+  email:     ['email','e-mail','email address','student email','agent email','username'],
+  first:     ['first','first name','firstname','fname','given name'],
+  last:      ['last','last name','lastname','lname','surname','family name'],
+  phone:     ['phone','phone number','mobile','mobile phone','cell'],
+  pct:       ['% complete','percent complete','complete %','course %','course percent',
+              'progress','completion','completion %','course progress','pre-licensing %'],
+  exam:      ['exam prep %','exam prep','exam prep percent','exam %','exam percent',
+              'exam prep progress','exam readiness'],
+  lastLogin: ['last login','last log in','last login date','last logged in','last activity',
+              'date last accessed','last accessed'],
+  enrolled:  ['date enrolled','enrolled','enrollment date','enroll date','start date'],
+  completed: ['date completed','completed','completion date','date complete','finished'],
+  course:    ['course','course name','program','package','product'],
+  expires:   ['date expires','expiration date','expiry date','expires'],
+  daysLeft:  ['days until expires','days until expiry','days left','days remaining'],
+};
+const norm = h => String(h||'').toLowerCase().replace(/[_\s]+/g,' ').replace(/[^a-z0-9% ]/g,'').trim();
+
+function mapHeaders(header){
+  const map={}, seen=header.map(norm);
+  for(const [field,aliases] of Object.entries(JI_FIELDS)){
+    let idx = seen.findIndex(h => aliases.includes(h));
+    if(idx === -1) idx = seen.findIndex(h => h && aliases.some(a => h.includes(a)));
+    if(idx !== -1) map[field]=idx;
+  }
+  return map;
+}
+
+const numOr = v => { const n=parseFloat(String(v==null?'':v).replace(/[^\d.\-]/g,'')); return isNaN(n)?'':n; };
+
+function rowsFromCSV(text){
+  const grid = parseCSV(text);
+  if(!grid.length) return {error:'That file appears to be empty.'};
+  const header = grid[0], map = mapHeaders(header);
+  if(map.email === undefined)
+    return {error:'No email column found. Recruits are matched by email, so the export must include one.',
+            header};
+  const out=[];
+  for(let i=1;i<grid.length;i++){
+    const g = grid[i], at = f => map[f]===undefined ? '' : String(g[map[f]]==null?'':g[map[f]]).trim();
+    const email = at('email').toLowerCase();
+    if(!email || email.indexOf('@')===-1) continue;          // skip totals/blank rows
+    out.push({
+      email, first:at('first'), last:at('last'), phone:at('phone'),
+      pct:numOr(at('pct')), exam:numOr(at('exam')),
+      lastLogin:toISO(at('lastLogin')), enrolled:toISO(at('enrolled')),
+      completed:toISO(at('completed')), course:at('course').replace(/\s+/g,' ').trim(),
+      expires:toISO(at('expires')), daysLeft:numOr(at('daysLeft')),
+    });
+  }
+  return {rows:out, map, header};
+}
+
+function handleCsvFile(file){
+  if(!file) return;
+  document.getElementById('csvname').innerHTML =
+    '<span class="fname">'+esc(file.name)+' &middot; '+Math.max(1,Math.round(file.size/1024))+' KB</span>';
+  const rd=new FileReader();
+  rd.onerror=()=>{document.getElementById('syncres').innerHTML='<span class="miss">Could not read that file.</span>';};
+  rd.onload=()=>{
+    const res=rowsFromCSV(rd.result);
+    if(res.error){
+      _syncRows=[]; setApply(false);
+      document.getElementById('syncres').innerHTML =
+        '<span class="miss">'+esc(res.error)+'</span>'+
+        (res.header?'<div class="prevbox"><h4>Columns found in the file</h4><div class="prevlist">'+
+          res.header.map(esc).join(' &middot; ')+'</div></div>':'');
+      return;
+    }
+    showPreview(res.rows, res.map, res.header);
+  };
+  rd.readAsText(file);
+}
+
+function previewPaste(){
   const rows=parseJI(document.getElementById('syncbox').value);
-  if(!rows.length){document.getElementById('syncres').innerHTML=
-    '<span class="miss">No agent rows found. Paste the full Training Report (the per-agent table).</span>';return;}
-  let matched=0;const missing=[];
-  for(const row of rows){
+  if(!rows.length){
+    _syncRows=[]; setApply(false);
+    document.getElementById('syncres').innerHTML =
+      '<span class="miss">No agent rows found. Paste the full Training Report table, or use the CSV tab.</span>';
+    return;
+  }
+  showPreview(rows, null, null);
+}
+
+/* Dry run: say exactly what will change before anything is written. */
+function showPreview(rows, map, header){
+  _lastPreview = {rows, map, header};
+  const matched=[], missing=[];
+  rows.forEach(row=>{
     const r=DATA.find(x=>(x.email||'').toLowerCase()===row.email);
-    if(r){const prevStage=r.stage;
-      r.licensing={pct:row.pct,exam:row.exam,lastLogin:row.lastLogin,course:row.course,
-      enrolled:row.enrolled,completed:row.completed,updated:Date.now()};
-      if(r.license==='unlicensed'&&['interview','meet','licensing','exampassed'].includes(r.stage))r.stage=row.completed?'exampassed':'licensing';
-      await SB.from('recruits').update(toRow(r)).eq('id',r.id);
-      if(r.stage!==prevStage)notifySlack('stage',r,r.stage);
-      matched++;}
-    else missing.push(row.first+' '+row.last+' ('+row.email+')');
+    (r?matched:missing).push(r?{row,r}:row);
+  });
+  _syncRows = matched;
+  setApply(matched.length>0);
+
+  let html = '<span class="'+(matched.length?'ok':'miss')+'">'+
+    'Read '+rows.length+' row'+(rows.length===1?'':'s')+' &middot; '+
+    matched.length+' match a recruit &middot; '+missing.length+' not on the board</span>';
+
+  if(map && header){
+    const rowsHtml = Object.keys(JI_FIELDS).map(f=>
+      '<tr><td>'+f+'</td><td>'+(map[f]===undefined
+        ? '<span class="nope">not found</span>'
+        : '<span class="got">'+esc(header[map[f]])+'</span>')+'</td></tr>').join('');
+    html += '<div class="prevbox"><h4>Column mapping</h4>'+
+            '<table class="maptbl"><tr><th>Field</th><th>Column in your file</th></tr>'+rowsHtml+'</table>'+
+            '<div style="color:var(--muted);font-size:12px">Only <b>email</b> is required. '+
+            'Anything not found is simply left unchanged on the recruit.</div></div>';
+  }
+  if(matched.length){
+    html += '<div class="prevbox"><h4>Will update ('+matched.length+')</h4><div class="prevlist">'+
+      matched.slice(0,40).map(m=>{
+        const st=proposedStage(m.r,m.row);
+        return esc(m.r.name)+' &mdash; course '+(m.row.pct===''?'&ndash;':m.row.pct+'%')+
+          (st?' <b style="color:var(--warn)">&rarr; stage becomes '+esc(stageName(st))+'</b>':'');
+      }).join('<br>')+
+      (matched.length>40?'<br>… and '+(matched.length-40)+' more':'')+'</div></div>';
+
+    // Anyone whose course access is about to lapse - the most time-critical
+    // thing in this report, and invisible in the old paste format.
+    const soon = matched.filter(m=>m.row.daysLeft!=='' && m.row.daysLeft<=7 && !m.row.completed)
+                        .sort((a,b)=>a.row.daysLeft-b.row.daysLeft);
+    if(soon.length){
+      html += '<div class="prevbox" style="border-color:#eec4c0;background:#fdf3f2">'+
+        '<h4 style="color:#b3261e">⚠ Course access expiring soon ('+soon.length+')</h4><div class="prevlist">'+
+        soon.map(m=>esc(m.r.name)+' &mdash; <b>'+m.row.daysLeft+' day'+(m.row.daysLeft===1?'':'s')+' left</b>'+
+          ', course '+(m.row.pct===''?'&ndash;':m.row.pct+'%')+' complete').join('<br>')+
+        '</div><div style="color:#8c3a33;font-size:12px;margin-top:6px">'+
+        'These need a call before their enrollment lapses.</div></div>';
+    }
+
+    const advancing = matched.filter(m=>proposedStage(m.r,m.row));
+    if(advancing.length){
+      html += '<div class="prevbox" style="border-color:#f0dfb6;background:#fff7e8">'+
+        '<h4 style="color:#7a5a16">Heads up: '+advancing.length+' stage change'+(advancing.length===1?'':'s')+'</h4>'+
+        '<div style="color:#7a5a16;font-size:12px">Each of these sends that stage\'s email. '+
+        'Untick the box above to update progress only.</div></div>';
+    }
+  }
+  if(missing.length){
+    html += '<div class="prevbox"><h4>Not in the pipeline ('+missing.length+')</h4><div class="prevlist">'+
+      missing.slice(0,40).map(x=>esc(((x.first||'')+' '+(x.last||'')).trim()||'(no name)')+' ('+esc(x.email)+')').join('<br>')+
+      (missing.length>40?'<br>… and '+(missing.length-40)+' more':'')+
+      '</div><div style="color:var(--muted);font-size:12px;margin-top:6px">'+
+      'These are skipped. Add them as recruits first if they should be tracked.</div></div>';
+  }
+  document.getElementById('syncres').innerHTML = html;
+}
+
+/* What stage would this row move the recruit to? '' means no change.
+   Mirrors the rule the original paste sync applied silently. */
+function proposedStage(r,row){
+  const box=document.getElementById('syncstage');
+  if(!box || !box.checked) return '';           // stage moves are opt-in
+  if(r.license!=='unlicensed') return '';
+  if(!['interview','meet','licensing','exampassed'].includes(r.stage)) return '';
+  const next = (row.completed || (r.licensing&&r.licensing.completed)) ? 'exampassed' : 'licensing';
+  return next===r.stage ? '' : next;
+}
+function stageName(id){const s=STAGES.find(x=>x.id===id);return s?s.name:id;}
+
+/* Only now do we write. Same update rules as the original paste sync. */
+async function applySync(){
+  if(!_syncRows.length) return;
+  const btn=document.getElementById('syncapply');
+  btn.disabled=true; btn.textContent='Applying…';
+  let done=0, failed=0;
+  for(const {row,r} of _syncRows){
+    const prevStage=r.stage;
+    const L=r.licensing||{};
+    r.licensing={
+      pct:       row.pct       !== '' ? row.pct       : (L.pct       ?? ''),
+      exam:      row.exam      !== '' ? row.exam      : (L.exam      ?? ''),
+      lastLogin: row.lastLogin || L.lastLogin || '',
+      course:    row.course    || L.course    || '',
+      enrolled:  row.enrolled  || L.enrolled  || '',
+      completed: row.completed || L.completed || '',
+      updated:   Date.now(),
+    };
+    const nextStage = proposedStage(r,row);
+    if(nextStage) r.stage = nextStage;
+    const {error}=await SB.from('recruits').update(toRow(r)).eq('id',r.id);
+    if(error){failed++;continue;}
+    if(r.stage!==prevStage) notifySlack('stage',r,r.stage);
+    done++;
   }
   render();
-  document.getElementById('syncres').innerHTML=
-    `<span class="ok">✓ Updated ${matched} recruit${matched===1?'':'s'} from ${rows.length} report rows.</span>`+
-    (missing.length?`<br><span class="miss">${missing.length} not in pipeline yet — add them as recruits:</span><br>${missing.map(esc).join('<br>')}`:'');
+  document.getElementById('syncres').innerHTML =
+    '<span class="ok">✓ Updated '+done+' recruit'+(done===1?'':'s')+'.</span>'+
+    (failed?'<br><span class="miss">'+failed+' could not be saved — check your access and try again.</span>':'');
+  _syncRows=[]; btn.textContent='Apply updates'; setApply(false);
 }
+
+/* drag & drop onto the zone */
+(function(){
+  const dz=document.getElementById('dropzone'); if(!dz) return;
+  ['dragenter','dragover'].forEach(e=>dz.addEventListener(e,ev=>{
+    ev.preventDefault();ev.stopPropagation();dz.classList.add('over');}));
+  ['dragleave','drop'].forEach(e=>dz.addEventListener(e,ev=>{
+    ev.preventDefault();ev.stopPropagation();dz.classList.remove('over');}));
+  dz.addEventListener('drop',ev=>{
+    const f=ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+    if(f) handleCsvFile(f);
+  });
+})();
 
 /* ---------- Message links ---------- */
 function smsLink(r){const t=TEMPLATES[r.stage]||TEMPLATES.interview;
