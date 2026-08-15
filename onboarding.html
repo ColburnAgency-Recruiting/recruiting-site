@@ -8,7 +8,7 @@
   :root{
     --navy:#0f294a;--navy2:#16365f;--navy3:#1d4373;--gold:#c9a45f;--gold2:#e0bd78;
     --bg:#eef1f5;--panel:#fff;--ink:#1c2b3a;--muted:#6b7c8f;--line:#dde3ea;
-    --good:#2e9e6b;--shadow:0 1px 3px rgba(16,40,74,.10),0 6px 20px rgba(16,40,74,.07);
+    --good:#2e9e6b;--bad:#c5544c;--shadow:0 1px 3px rgba(16,40,74,.10),0 6px 20px rgba(16,40,74,.07);
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -56,20 +56,6 @@
   .codechip.copied{border-style:solid;border-color:var(--good);background:#e9f7ef;color:var(--good)}
   .step .req{display:inline-block;margin-left:9px;font-size:10.5px;font-weight:800;color:#9a5a18;
     background:#fbeede;padding:2px 8px;border-radius:20px;vertical-align:middle}
-  .cta{background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border-radius:16px;
-    padding:26px;text-align:center;margin:26px 0 10px}
-  .cta h2{margin:0 0 8px;font-size:20px}
-  .cta p{margin:0 auto 16px;max-width:460px;color:#cdddf0;font-size:14px}
-  .cta a{display:inline-block;text-decoration:none;background:var(--gold);color:var(--navy);font-weight:800;
-    font-size:15px;padding:13px 26px;border-radius:11px}
-  .cta a:hover{background:var(--gold2)}
-  .cta .gate{display:inline-block;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
-    color:var(--navy);background:var(--gold);padding:4px 12px;border-radius:20px;margin-bottom:11px}
-  .cta-need{background:rgba(201,164,95,.14);border:1px solid rgba(201,164,95,.42);border-radius:10px;
-    padding:11px 15px;margin:0 auto 18px;max-width:520px;font-size:13.3px;color:#e6eef8;text-align:left;line-height:1.5}
-  .cta-need span{color:var(--gold2);font-weight:800}
-  .cta-note{margin:18px auto 0;max-width:515px;font-size:12.8px;color:#a3bcd8;line-height:1.55;
-    border-top:1px solid rgba(255,255,255,.14);padding-top:14px}
   .values{margin-top:30px}
   .values h2{text-align:center;font-size:18px;color:var(--navy);margin-bottom:4px}
   .values .vsub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
@@ -78,7 +64,100 @@
   .val h4{margin:0 0 5px;font-size:14.5px;color:var(--navy)}
   .val p{margin:0;font-size:12.8px;color:var(--muted)}
   footer{text-align:center;color:var(--muted);font-size:12px;padding:22px 10px 0}
-  @media(max-width:560px){.vgrid{grid-template-columns:1fr}header h1{font-size:23px}}
+
+  /* ---------- Step 6: expandable contracting section ---------- */
+  .step.expandable{display:block;padding:0;overflow:hidden}
+  .s6head{display:flex;gap:16px;align-items:flex-start;padding:18px 20px;cursor:pointer;
+    user-select:none;transition:background .15s}
+  .s6head:hover{background:#f7f9fc}
+  .step.done .s6head:hover{background:#f5fcf8}
+  .s6head .s6text{flex:1}
+  .s6head h3{margin:2px 0 5px}
+  .s6head p{margin:0}
+  .chev{flex:none;align-self:center;width:30px;height:30px;border-radius:8px;background:#eef2f7;color:var(--navy3);
+    display:grid;place-items:center;font-size:13px;font-weight:800;transition:transform .25s,background .15s}
+  .step.open .chev{transform:rotate(180deg);background:var(--gold);color:var(--navy)}
+  .s6body{display:none;border-top:1px solid var(--line);padding:4px 20px 22px;background:#fbfcfe}
+  .step.open .s6body{display:block}
+  .s6hint{display:inline-flex;align-items:center;gap:6px;font-size:12.2px;font-weight:700;color:var(--navy3);
+    background:#e7f0fa;border-radius:20px;padding:3px 11px;margin-top:10px}
+  .step.open .s6hint{display:none}
+
+  #step6 .c6{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:16px 18px;margin:14px 0}
+  #step6 .c6 h4{font-size:14.5px;margin:0 0 3px;color:var(--navy);display:flex;align-items:center;gap:9px}
+  #step6 .c6 h4 .num{background:var(--navy);color:#fff;width:22px;height:22px;border-radius:50%;
+    display:grid;place-items:center;font-size:11.5px;font-weight:800;flex:none}
+  #step6 .c6 .c6sub{color:var(--muted);font-size:12.5px;margin:0 0 10px;padding-left:31px}
+  #step6 label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.4px;margin:13px 0 5px}
+  #step6 label .rq{color:var(--bad)}
+  #step6 input,#step6 select{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;
+    border:1px solid var(--line);border-radius:9px;outline:none;background:#fcfdfe;color:var(--ink)}
+  #step6 input:focus,#step6 select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,164,95,.18)}
+  #step6 .row{display:flex;gap:14px;flex-wrap:wrap}#step6 .row>*{flex:1;min-width:150px}
+  #step6 .radio{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+  #step6 .radio label{flex:1;min-width:150px;text-transform:none;letter-spacing:0;font-size:14px;font-weight:600;
+    color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:11px;text-align:center;
+    cursor:pointer;margin:0;background:#fcfdfe}
+  #step6 .radio input{display:none}
+  #step6 .radio label:has(input:checked){border-color:var(--gold);background:#fdf8ee;box-shadow:0 0 0 2px rgba(201,164,95,.2)}
+  #step6 .optcards{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+  #step6 .optcards label{display:flex;gap:11px;align-items:flex-start;text-transform:none;letter-spacing:0;
+    font-weight:600;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    cursor:pointer;margin:0;background:#fcfdfe;font-size:14px}
+  #step6 .optcards input{width:18px;height:18px;flex:none;margin-top:1px;accent-color:var(--gold)}
+  #step6 .optcards label:has(input:checked){border-color:var(--gold);background:#fdf8ee;box-shadow:0 0 0 2px rgba(201,164,95,.2)}
+  #step6 .optcards .ot b{display:block;font-size:14px;color:var(--navy);font-weight:800;margin-bottom:2px}
+  #step6 .optcards .ot em{font-style:normal;font-weight:500;color:var(--muted);font-size:12.6px;line-height:1.45}
+  #step6 .emailnote{display:flex;gap:10px;background:#fdf8ee;border:1px solid #ecd9ac;border-radius:10px;
+    padding:12px 14px;margin:0 0 9px;font-size:12.9px;color:#6d5218;line-height:1.5}
+  #step6 .emailnote .en-ic{flex:none;font-size:15px;line-height:1.3}
+  #step6 .emailnote b{display:block;color:var(--navy);font-size:13.2px;margin-bottom:3px}
+  #step6 .en-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px}
+  #step6 .en-have{font-weight:700;color:#7a5a16}
+  #step6 .en-btn{display:inline-block;text-decoration:none;background:var(--navy);color:#fff;font-weight:700;
+    font-size:12.5px;padding:8px 14px;border-radius:8px;white-space:nowrap}
+  #step6 .en-btn:hover{background:var(--navy2)}
+  #step6 .secnote{background:#fff7e8;border:1px solid #f0dfb6;border-radius:10px;padding:12px 14px;
+    font-size:12.8px;color:#7a5a16;display:flex;gap:9px;margin-top:12px;line-height:1.5}
+  #step6 .ack{display:flex;gap:10px;align-items:flex-start;font-size:13px;margin-top:12px;
+    text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink)}
+  #step6 .ack input{width:20px;height:20px;flex:none;margin-top:1px;accent-color:var(--gold)}
+  #step6 .submit6{width:100%;background:var(--gold);color:var(--navy);font-size:16px;font-weight:800;border:none;
+    border-radius:11px;padding:15px;cursor:pointer;margin-top:14px;font-family:inherit}
+  #step6 .submit6:hover{background:var(--gold2)}
+  #step6 .submit6:disabled{opacity:.7;cursor:default}
+  #step6 .err{color:var(--bad);font-size:12.5px;font-weight:700;margin-top:8px;display:none}
+  #step6 .fielderr{display:block;color:var(--bad);font-size:11.5px;font-weight:700;margin-top:5px;
+    text-transform:none;letter-spacing:0}
+  #step6 .hintline{display:block;font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45}
+  #step6 .knownas{display:flex;gap:9px;align-items:flex-start;background:#e9f7ef;border:1px solid #bfe3cf;
+    border-radius:10px;padding:11px 14px;margin:0 0 4px;font-size:13px;color:#1f6d4a;line-height:1.5}
+  #step6 .knownas b{color:#14573a}
+  #step6 .badgroup{border:1px solid var(--bad);border-radius:11px;padding:8px;background:#fdf5f4}
+  #step6 .steperr{display:none;background:#fdf3f2;border:1px solid #eec4c0;border-radius:10px;
+    padding:12px 14px;margin-top:12px;font-size:13px;color:#8c3a33;line-height:1.5}
+  #step6 .steperr b{display:block;color:var(--bad);margin-bottom:3px;font-size:13.4px}
+  #step6 .steperr a{color:var(--navy);font-weight:800;text-decoration:underline;cursor:pointer}
+  #step6 .done6{display:none;text-align:center;padding:26px 10px 10px}
+  #step6 .done6.show{display:block}
+  #step6 .done6 .ic{width:60px;height:60px;border-radius:50%;background:#dff1e8;color:var(--good);
+    display:inline-grid;place-items:center;font-size:32px;margin-bottom:10px}
+  #step6 .done6 h4{color:var(--navy);margin:0 0 6px;font-size:19px}
+  #step6 .done6 p{color:var(--muted);font-size:13.5px;margin:0 auto;max-width:430px}
+  #step6 .done6 .btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  #step6 .done6 a,#step6 .done6 button{text-decoration:none;font-weight:700;font-size:13.5px;padding:11px 17px;
+    border-radius:10px;border:none;cursor:pointer;font-family:inherit}
+  #step6 .sendfail{display:none;gap:9px;text-align:left;background:#fdf3f2;border:1px solid #eec4c0;
+    border-radius:10px;padding:12px 14px;margin:14px auto 0;max-width:470px;font-size:12.9px;
+    color:#8c3a33;line-height:1.5}
+  #step6 .done6.warn .ic{background:#fdecea;color:var(--bad)}
+  #step6 .done6.warn .okmsg{display:none}
+  #step6 .pri{background:var(--navy);color:#fff}
+  #step6 .sec{background:#eef2f7;color:var(--navy3)}
+
+  @media(max-width:560px){.vgrid{grid-template-columns:1fr}header h1{font-size:23px}
+    .s6head{padding:16px}.s6body{padding:4px 14px 20px}}
 </style>
 </head>
 <body>
@@ -86,22 +165,21 @@
   <a class="nb-brand" href="onboarding.html"><span class="nb-logo">CA</span> Colburn Agency</a>
   <div class="nb-links">
     <a href="onboarding.html" class="active">Onboarding</a>
-    <a href="contracting-intake.html">Contracting</a>
-    <a href="https://recruiting.colburnfinancial.com/recruiting-pipeline">↩ Main site</a>
+    <a href="https://recruiting.colburnfinancial.com/recruiting-pipeline" target="_blank" rel="noopener">↩ Main site</a>
   </div>
 </nav>
 <header>
   <div class="logo">CA</div>
   <div class="eyebrow">Welcome to the team</div>
   <h1>Your Onboarding Checklist</h1>
-  <p>Five quick steps to get you fully plugged in. Check each one off as you go — let's get you started fast.</p>
+  <p>Six quick steps to get you fully plugged in. Check each one off as you go — let's get you started fast.</p>
 </header>
 <div class="wrap">
 
   <div class="progress-wrap">
     <div class="pct" id="pct">0%</div>
     <div class="barwrap">
-      <div class="lbl" id="plabel">0 of 5 steps complete</div>
+      <div class="lbl" id="plabel">0 of 6 steps complete</div>
       <div class="bar"><span id="bar"></span></div>
     </div>
   </div>
@@ -111,20 +189,20 @@
   <div class="step" data-step="corevalues">
     <div class="check" onclick="toggle('corevalues')">✓</div>
     <div>
-      <div class="n">Step 1</div>
+      <div class="n">Step 1 <span class="req">Required</span></div>
       <h3>Download our Core Values</h3>
       <p>Understand the values that shape our culture, leadership, and approach to success.</p>
-      <a class="go" href="core-values.pdf" download="Colburn-Agency-Core-Values.pdf" target="_blank" onclick="markDone('corevalues')">Download Core Values →</a>
+      <a class="go" href="core-values.pdf" download="Colburn-Agency-Core-Values.pdf" target="_blank" rel="noopener" onclick="markDone('corevalues')">Download Core Values →</a>
     </div>
   </div>
 
   <div class="step" data-step="calendar">
     <div class="check" onclick="toggle('calendar')">✓</div>
     <div>
-      <div class="n">Step 2</div>
+      <div class="n">Step 2 <span class="req">Required</span></div>
       <h3>Sync the Agency Calendar</h3>
       <p>Stay on top of training calls, events, and important meetings by syncing our calendar to yours.</p>
-      <a class="go" href="https://calendar.google.com/calendar/embed?src=8qgi3jrt0h0gqbq28of3mca1og%40group.calendar.google.com&ctz=America%2FChicago" target="_blank" onclick="markDone('calendar')">Open the Calendar →</a>
+      <a class="go" href="https://calendar.google.com/calendar/embed?src=8qgi3jrt0h0gqbq28of3mca1og%40group.calendar.google.com&ctz=America%2FChicago" target="_blank" rel="noopener" onclick="markDone('calendar')">Open the Calendar →</a>
     </div>
   </div>
 
@@ -134,30 +212,181 @@
       <div class="n">Step 3 <span class="req">Required</span></div>
       <h3>Join the Slack Community</h3>
       <p>This is where the team lives — updates, support, and real-time chat with your mentors. Don't skip this one.</p>
-      <a class="go" href="https://join.slack.com/t/colburnagency/shared_invite/zt-2kb850491-T0SEvGGY0YsaorBA8kYoGA" target="_blank" onclick="markDone('slack')">Register for Slack →</a>
+      <a class="go" href="https://join.slack.com/t/colburnagency/shared_invite/zt-2kb850491-T0SEvGGY0YsaorBA8kYoGA" target="_blank" rel="noopener" onclick="markDone('slack')">Register for Slack →</a>
     </div>
   </div>
 
   <div class="step" data-step="zoom">
     <div class="check" onclick="toggle('zoom')">✓</div>
     <div>
-      <div class="n">Step 4</div>
+      <div class="n">Step 4 <span class="req">Required</span></div>
       <h3>Set Up Your Zoom Account</h3>
       <p>Our business runs on Zoom. Get set up so you can join meetings and client calls smoothly.</p>
-      <a class="go" href="https://zoom.us" target="_blank" onclick="markDone('zoom')">Set Up Zoom →</a>
+      <a class="go" href="https://zoom.us" target="_blank" rel="noopener" onclick="markDone('zoom')">Set Up Zoom →</a>
     </div>
   </div>
 
   <div class="step" data-step="event">
     <div class="check" onclick="toggle('event')">✓</div>
     <div>
-      <div class="n">Step 5</div>
+      <div class="n">Step 5 <span class="req">Required</span></div>
       <h3>Register for Our Next Events: Engage &amp; Ignite</h3>
       <p>Accelerate your start by attending our upcoming training and networking events. Copy your discount code, then register.</p>
-      <a class="go" href="https://www.quilityevents.com/event/engage26/home" target="_blank" onclick="markDone('event')">Register for Engage →</a>
+      <a class="go" href="https://www.quilityevents.com/event/engage26/home" target="_blank" rel="noopener" onclick="markDone('event')">Register for Engage →</a>
       <button type="button" class="codechip" id="codechip" onclick="copyEventCode()"><span class="cc-label">📋 Copy code</span><b>Colburn0706</b></button>
     </div>
   </div>
+
+  <!-- ===================== STEP 6 — CONTRACTING ===================== -->
+  <div class="step expandable" id="step6" data-step="contracting">
+    <div class="s6head" onclick="toggleStep6(event)">
+      <div class="check" onclick="event.stopPropagation();toggle('contracting')">✓</div>
+      <div class="s6text">
+        <div class="n">Step 6 <span class="req">Required</span></div>
+        <h3>Send Us Your Contracting Information</h3>
+        <p>This information is used by our contracting director to start your contracting with Symmetry. Licensed or not licensed yet — we still need this information. You only need to complete this form <b>one time</b>.</p>
+        <span class="s6hint">▾ Click to open the form</span>
+      </div>
+      <div class="chev" aria-hidden="true">▾</div>
+    </div>
+
+    <div class="s6body">
+      <form id="form6" onsubmit="return false">
+
+        <div class="c6">
+          <h4><span class="num">1</span> Your information</h4>
+          <p class="c6sub">Use your full legal name exactly as it appears on your government ID.</p>
+          <div class="row">
+            <div><label>Legal first name <span class="rq">*</span></label><input data-req name="First name" /></div>
+            <div><label>Middle</label><input name="Middle name" /></div>
+            <div><label>Legal last name <span class="rq">*</span></label><input data-req name="Last name" /></div>
+          </div>
+          <div class="row">
+            <div><label>Preferred name</label><input name="Preferred name" placeholder="What we'll call you" /></div>
+            <div><label>Date of birth <span class="rq">*</span></label><input data-req type="date" name="Date of birth" /></div>
+            <div><label>Mobile phone <span class="rq">*</span></label><input data-req type="tel" name="Mobile phone" placeholder="(555) 123-4567" /></div>
+          </div>
+
+          <label>Business email <span class="rq">*</span></label>
+          <div class="emailnote">
+            <span class="en-ic">📧</span>
+            <div>
+              <b>This must be a NEW email address dedicated to your Symmetry business.</b>
+              Please don't use a personal or current-job address. Everything from Symmetry, the carriers,
+              and the agency comes to this address — a separate inbox keeps your business organized from day one.
+              <div class="en-row">
+                <span class="en-have">Already have one? Great — enter it below.</span>
+                <a class="en-btn" href="https://accounts.google.com/signup" target="_blank" rel="noopener">Create a free Gmail account →</a>
+              </div>
+            </div>
+          </div>
+          <input data-req type="email" name="Email" placeholder="yourname.insurance@gmail.com" />
+
+          <div id="priorwrap">
+            <label>The email we've been contacting you at <span class="rq">*</span></label>
+            <input data-req type="email" name="Previous email" placeholder="the address your recruiter has been emailing" />
+            <span class="hintline">This is how we connect this form to your record. If it's the same as the
+              address above, just enter it again.</span>
+          </div>
+        </div>
+
+        <div class="c6">
+          <h4><span class="num">2</span> Mailing address</h4>
+          <p class="c6sub">Where official mail and your contracting documents should go.</p>
+          <label>Street address <span class="rq">*</span></label><input data-req name="Street" />
+          <div class="row">
+            <div><label>City <span class="rq">*</span></label><input data-req name="City" /></div>
+            <div style="max-width:150px"><label>State <span class="rq">*</span></label><input data-req name="State" placeholder="TX" /></div>
+            <div style="max-width:140px"><label>ZIP <span class="rq">*</span></label><input data-req name="ZIP" inputmode="numeric" placeholder="78701" maxlength="10" /></div>
+          </div>
+        </div>
+
+        <div class="c6">
+          <h4><span class="num">3</span> Licensing</h4>
+          <p class="c6sub">This tells us whether you're ready to contract now or need to get licensed first.</p>
+          <label>Which best describes you? <span class="rq">*</span></label>
+          <div class="optcards" id="licstatus">
+            <label><input type="radio" name="License status" value="New">
+              <span class="ot"><b>New</b><em>Just received your license, or unlicensed with no prior industry experience — or experienced but not tied to another IMO (a free agent).</em></span></label>
+            <label><input type="radio" name="License status" value="Returning">
+              <span class="ot"><b>Returning</b><em>Previously contracted with SFG (Symmetry Financial Group).</em></span></label>
+            <label><input type="radio" name="License status" value="Transfer">
+              <span class="ot"><b>Transfer</b><em>Currently contracted under another IMO and not a free agent — locked with certain carriers.</em></span></label>
+            <label><input type="radio" name="License status" value="Advanced Market">
+              <span class="ot"><b>Advanced Market</b><em>Focused on ONLY Advanced Market solutions (IUL, IBC, DFL &amp; Annuities).</em></span></label>
+          </div>
+          <label>Are you currently insurance licensed? <span class="rq">*</span></label>
+          <div class="radio" id="licensedgroup">
+            <label><input type="radio" name="Licensed" value="Yes — licensed" onchange="toggleLic(true)"><span>Yes, I'm licensed</span></label>
+            <label><input type="radio" name="Licensed" value="No — not yet licensed" onchange="toggleLic(false)"><span>Not yet</span></label>
+          </div>
+          <div id="licfields" style="display:none">
+            <div class="row">
+              <div><label>Resident license state <span class="rq">*</span></label><input name="Resident state" placeholder="TX" /></div>
+              <div><label>NPN (National Producer Number) <span class="rq">*</span></label><input name="NPN" inputmode="numeric" placeholder="e.g. 12345678" /></div>
+            </div>
+            <label>Other states you're licensed in</label><input name="Licensed states" placeholder="e.g. TX, OK, LA" />
+          </div>
+          <div id="unlicnote" class="secnote" style="display:none">
+            <span>📚</span><span>No problem — after this form we'll enroll you in the
+            <b>justinsurance.com</b> licensing program. We'll walk you from licensed to contracted.</span>
+          </div>
+        </div>
+
+        <div class="c6">
+          <h4><span class="num">4</span> Who brought you in</h4>
+          <p class="c6sub">So we can connect you with your recruiting agent.</p>
+          <div class="row">
+            <div><label>Recruiting agent <span class="rq">*</span></label><input data-req name="Recruiting agent" placeholder="The agent who recruited you" /></div>
+            <div><label>How did you hear about us?</label>
+              <select name="Source">
+                <option value="" selected disabled>Select one…</option>
+                <option>Craigslist</option>
+                <option>Job Board (LinkedIn, ZipRecruiter, Indeed, etc.)</option>
+                <option>Warm Market</option>
+                <option>Referred</option>
+              </select></div>
+          </div>
+        </div>
+
+        <div class="c6">
+          <div class="secnote" style="background:#eef4fb;border-color:#cfe0f2;color:#274a73;margin-top:0">
+            <span>🔒</span><span><b>Your security:</b> This form collects your contact and licensing details only.
+            Your <b>SSN, banking, and e-signature</b> for carrier contracting are entered separately in
+            Symmetry's <b>secure contracting portal</b> — never on this page.</span>
+          </div>
+          <label class="ack"><input type="checkbox" id="ack6" />
+            <span>I confirm the information above is accurate and I'm ready to begin contracting with the Colburn Agency / Symmetry Financial Group.</span></label>
+          <div class="err" id="ackerr6">Please confirm to continue.</div>
+          <div class="steperr" id="steperr6">
+            <b>Finish your checklist first</b>
+            <span id="steperrtext"></span>
+            <a onclick="jumpToFirstIncomplete()">Take me to it →</a>
+          </div>
+          <button type="button" class="submit6" onclick="submitContracting(this)">Submit my information</button>
+          <div class="err" id="formerr6" style="text-align:center">Please correct the highlighted fields above.</div>
+        </div>
+      </form>
+
+      <div class="done6" id="done6">
+        <div class="ic">✓</div>
+        <h4>Thank you, <span id="dn6">agent</span>!</h4>
+        <p class="okmsg">Your contracting information is in and your recruiting team has been notified.
+          They'll reach out with your next step.</p>
+        <div class="sendfail" id="sendfail">
+          <span>⚠️</span>
+          <span><b>We couldn't send this automatically.</b> Nothing is lost — your answers are still here.
+            Please click <b>Email a copy to the agency</b> below so we get your information, or download
+            a copy and send it to your recruiter. Sorry about that.</span>
+        </div>
+        <div class="btns">
+          <a id="emailbtn6" class="pri" href="#" target="_blank" rel="noopener">Email a copy to the agency</a>
+          <button class="sec" type="button" onclick="downloadCopy6()">Download a copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- =================== END STEP 6 — CONTRACTING =================== -->
 
   <div class="finishbox">
     <h2>Done? Let your agency know</h2>
@@ -168,15 +397,6 @@
     </div>
     <button id="ob_btn" onclick="finishOnboarding(this)">I've completed onboarding</button>
     <div id="ob_msg" class="fb-msg"></div>
-  </div>
-
-  <div class="cta">
-    <span class="gate">Licensed agents only</span>
-    <h2>Have your license? Time to get contracted.</h2>
-    <p><b>Only complete this step if you already hold an active insurance license and are ready to be contracted.</b> If that's you, send us your contracting information and we'll get you appointed in HQ so you can start writing.</p>
-    <div class="cta-need"><span>Have handy:</span> your resident license state, your NPN (National Producer Number), and any other states you're licensed in.</div>
-    <a href="contracting-intake.html">Complete Contracting Form →</a>
-    <div class="cta-note"><b>Not licensed yet?</b> Skip this step for now — finish the checklist above and your recruiter will walk you through getting licensed. Come back here the day you pass.</div>
   </div>
 
   <div class="values">
@@ -206,12 +426,277 @@
   .fb-msg{margin-top:12px;font-weight:700;font-size:14px;min-height:18px}
 </style>
 <script>
-const STEPS=['corevalues','calendar','slack','zoom','event'];
-const STEP_LABELS={corevalues:'Core Values',calendar:'Agency Calendar',slack:'Slack',zoom:'Zoom',event:'Next Event'};
+const STEPS=['corevalues','calendar','slack','zoom','event','contracting'];
+const STEP_LABELS={corevalues:'Core Values',calendar:'Agency Calendar',slack:'Slack',zoom:'Zoom',
+  event:'Next Event',contracting:'Contracting Info'};
 const SUPA_URL='https://vrtnbucwukxdkiisndnk.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZydG5idWN3dWt4ZGtpaXNuZG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjQ5MTcsImV4cCI6MjA5NzkwMDkxN30.hjdRPeWHvTT27sCIZMhfgLuuntPloDoK8Cm2EPRFl2w';
+const AGENCY_EMAIL='colburnfinancial@gmail.com'; // mailto fallback only
 const KEY='cf_onboarding_progress';
+const TKEY='cf_recruit_token';
 let done=load();
+let lastData6=null;
+
+/* ---------- who is this? ----------
+   Stage emails and the recruiter's "copy link" button send recruits here as
+   onboarding.html?r=<their recruit id>. That token is how the submission gets
+   tied back to their pipeline record — which matters because we now ask every
+   recruit to create a NEW business email, so their email alone won't match.
+   We stash it so a recruit who bookmarks the bare URL, or finishes on another
+   day, is still identified. If there's no token we ask for the address we've
+   been emailing them at instead. */
+const RTOKEN=(function(){
+  let t='';
+  try{t=(new URLSearchParams(location.search).get('r')||'').trim();}catch(e){}
+  const isId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if(isId.test(t)){try{localStorage.setItem(TKEY,t);}catch(e){}return t;}
+  try{const s=(localStorage.getItem(TKEY)||'').trim();if(isId.test(s))return s;}catch(e){}
+  return '';
+})();
+// With a token we already know who they are, so don't make them dig up an old address.
+(function(){
+  const wrap=document.getElementById('priorwrap');
+  if(!wrap||!RTOKEN)return;
+  const prior=wrap.querySelector('[name="Previous email"]');
+  if(prior)prior.removeAttribute('data-req');
+  wrap.innerHTML='<div class="knownas"><span>✓</span><span><b>You\'re linked to your recruiting record.</b> '+
+    'You came from your personal onboarding link, so we already know who you are — '+
+    'no need to tell us your old email address.</span></div>';
+})();
+
+/* ---------- Step 6 open / close ---------- */
+function toggleStep6(e){
+  if(e&&e.target&&e.target.closest('.check'))return;
+  document.getElementById('step6').classList.toggle('open');
+}
+function openStep6(){document.getElementById('step6').classList.add('open');}
+
+/* ---------- Step 6 form ---------- */
+function toggleLic(isLic){
+  document.getElementById('licfields').style.display=isLic?'block':'none';
+  document.getElementById('unlicnote').style.display=isLic?'none':'flex';
+  clearGroup('licensedgroup');
+  if(!isLic){['Resident state','NPN'].forEach(n=>clearField(f6(n)));}
+}
+
+/* ---------- validation helpers ---------- */
+function f6(name){return document.querySelector(`#form6 [name="${name}"]`);}
+function clearField(el){
+  if(!el)return;
+  el.style.borderColor='';
+  const e=el.nextElementSibling;
+  if(e&&e.classList.contains('fielderr'))e.remove();
+}
+function flagField(el,msg){
+  el.style.borderColor='var(--bad)';
+  let e=el.nextElementSibling;
+  if(!e||!e.classList.contains('fielderr')){
+    e=document.createElement('span');e.className='fielderr';
+    el.insertAdjacentElement('afterend',e);
+  }
+  e.textContent=msg;
+}
+function clearGroup(id){const g=document.getElementById(id);if(g)g.classList.remove('badgroup');}
+function flagGroup(id){const g=document.getElementById(id);if(g)g.classList.add('badgroup');}
+
+const RX={
+  email:/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/,
+  zip:/^\d{5}(-\d{4})?$/
+};
+const STATES={AL:'ALABAMA',AK:'ALASKA',AZ:'ARIZONA',AR:'ARKANSAS',CA:'CALIFORNIA',CO:'COLORADO',
+  CT:'CONNECTICUT',DE:'DELAWARE',DC:'DISTRICT OF COLUMBIA',FL:'FLORIDA',GA:'GEORGIA',HI:'HAWAII',
+  ID:'IDAHO',IL:'ILLINOIS',IN:'INDIANA',IA:'IOWA',KS:'KANSAS',KY:'KENTUCKY',LA:'LOUISIANA',ME:'MAINE',
+  MD:'MARYLAND',MA:'MASSACHUSETTS',MI:'MICHIGAN',MN:'MINNESOTA',MS:'MISSISSIPPI',MO:'MISSOURI',
+  MT:'MONTANA',NE:'NEBRASKA',NV:'NEVADA',NH:'NEW HAMPSHIRE',NJ:'NEW JERSEY',NM:'NEW MEXICO',
+  NY:'NEW YORK',NC:'NORTH CAROLINA',ND:'NORTH DAKOTA',OH:'OHIO',OK:'OKLAHOMA',OR:'OREGON',
+  PA:'PENNSYLVANIA',RI:'RHODE ISLAND',SC:'SOUTH CAROLINA',SD:'SOUTH DAKOTA',TN:'TENNESSEE',TX:'TEXAS',
+  UT:'UTAH',VT:'VERMONT',VA:'VIRGINIA',WA:'WASHINGTON',WV:'WEST VIRGINIA',WI:'WISCONSIN',WY:'WYOMING'};
+// accepts "TX", "tx", "Texas", "texas" — returns the abbreviation, or '' if it isn't a state
+function normalizeState(v){
+  const s=String(v||'').trim().toUpperCase().replace(/\s+/g,' ');
+  if(STATES[s])return s;
+  const hit=Object.keys(STATES).find(k=>STATES[k]===s);
+  return hit||'';
+}
+const LABELS6={'First name':'legal first name','Last name':'legal last name','Date of birth':'date of birth',
+  'Email':'business email','Mobile phone':'mobile phone','Street':'street address','City':'city',
+  'State':'state','ZIP':'ZIP','Recruiting agent':'recruiting agent'};
+
+// clear a field's error as soon as they start fixing it
+document.querySelectorAll('#form6 input, #form6 select').forEach(el=>{
+  el.addEventListener('input',()=>clearField(el));
+});
+// state fields: turn "Texas" into "TX" when they tab away
+['State','Resident state'].forEach(n=>{
+  const el=f6(n);
+  if(el)el.addEventListener('blur',()=>{const s=normalizeState(el.value);if(s)el.value=s;});
+});
+// radio groups clear their highlight once answered
+document.querySelectorAll('#licstatus input').forEach(el=>
+  el.addEventListener('change',()=>clearGroup('licstatus')));
+
+function validate6(){
+  const bad=[];  // [element, message]
+  // required text fields
+  Object.keys(LABELS6).forEach(n=>{
+    const el=f6(n); if(!el)return;
+    clearField(el);
+    if(!el.value.trim())bad.push([el,'Please enter your '+LABELS6[n]+'.']);
+  });
+  // format checks (only when something was entered)
+  const email=f6('Email');
+  if(email.value.trim()&&!RX.email.test(email.value.trim()))
+    bad.push([email,'That doesn’t look like a valid email address.']);
+  // Only present when they arrived without a personal link — it's the fallback
+  // key for tying this submission to their pipeline record.
+  const prior=f6('Previous email');
+  if(prior&&prior.hasAttribute('data-req')){
+    clearField(prior);
+    if(!prior.value.trim())bad.push([prior,'Please enter the email we’ve been contacting you at.']);
+    else if(!RX.email.test(prior.value.trim()))
+      bad.push([prior,'That doesn’t look like a valid email address.']);
+  }
+  const phone=f6('Mobile phone');
+  if(phone.value.trim()&&phone.value.replace(/\D/g,'').length<10)
+    bad.push([phone,'Please enter a 10-digit phone number.']);
+  const state=f6('State');
+  if(state.value.trim()){
+    const s=normalizeState(state.value);
+    if(s)state.value=s; else bad.push([state,'That isn’t a US state — try the 2-letter code (e.g. TX).']);
+  }
+  const zip=f6('ZIP');
+  if(zip.value.trim()&&!RX.zip.test(zip.value.trim()))
+    bad.push([zip,'Please enter a 5-digit ZIP code.']);
+
+  // radio groups
+  clearGroup('licstatus');clearGroup('licensedgroup');
+  const licStatus=document.querySelector('input[name="License status"]:checked');
+  if(!licStatus){flagGroup('licstatus');bad.push([document.getElementById('licstatus'),null]);}
+  const licensed=document.querySelector('input[name="Licensed"]:checked');
+  if(!licensed){flagGroup('licensedgroup');bad.push([document.getElementById('licensedgroup'),null]);}
+
+  // licensed? then NPN + resident state are required
+  if(licensed&&licensed.value.indexOf('Yes')===0){
+    const rs=f6('Resident state'),npn=f6('NPN');
+    clearField(rs);clearField(npn);
+    if(!rs.value.trim())bad.push([rs,'Required — your resident license state.']);
+    else{const s=normalizeState(rs.value);
+      if(s)rs.value=s; else bad.push([rs,'That isn’t a US state — try the 2-letter code (e.g. TX).']);}
+    if(!npn.value.trim())bad.push([npn,'Required — your National Producer Number.']);
+    else if(!/^\d{4,12}$/.test(npn.value.trim().replace(/\s/g,'')))
+      bad.push([npn,'An NPN is numbers only (usually 5–10 digits).']);
+  }
+
+  bad.forEach(([el,msg])=>{if(msg)flagField(el,msg);});
+  return bad;
+}
+
+function incompleteSteps(){return STEPS.slice(0,5).filter(id=>!done[id]);}
+function jumpToFirstIncomplete(){
+  const first=incompleteSteps()[0];
+  if(!first)return;
+  const el=document.querySelector(`.step[data-step="${first}"]`);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function listNames(arr){
+  const n=arr.map(id=>STEP_LABELS[id]);
+  return n.length===1?n[0]:n.slice(0,-1).join(', ')+' and '+n[n.length-1];
+}
+function collect6(){
+  const d={};
+  document.querySelectorAll('#form6 input[name], #form6 select[name]').forEach(el=>{
+    if(el.type==='radio'){if(el.checked)d[el.name]=el.value;}
+    else if(el.type==='checkbox'){d[el.name]=el.checked?'Yes':'No';}
+    else if(el.value.trim())d[el.name]=el.value.trim();
+  });
+  // fold in the checklist progress from steps 1–5
+  STEPS.slice(0,5).forEach(id=>{d['Step: '+STEP_LABELS[id]]=done[id]?'Yes':'No';});
+  return d;
+}
+async function submitContracting(btn){
+  const formerr=document.getElementById('formerr6'), ackerr=document.getElementById('ackerr6'),
+        steperr=document.getElementById('steperr6');
+  formerr.style.display='none';ackerr.style.display='none';steperr.style.display='none';
+
+  // 1) fields
+  const bad=validate6();
+  if(bad.length){
+    formerr.style.display='block';
+    bad[0][0].scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  // 2) acknowledgment
+  if(!document.getElementById('ack6').checked){
+    ackerr.style.display='block';
+    ackerr.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  // 3) checklist steps 1–5 must all be complete
+  const missing=incompleteSteps();
+  if(missing.length){
+    document.getElementById('steperrtext').textContent=
+      'Your information is ready, but '+(missing.length===1?'one step is':missing.length+' steps are')+
+      ' still open above: '+listNames(missing)+'. Complete '+(missing.length===1?'it':'them')+
+      ', then submit. ';
+    steperr.style.display='block';
+    steperr.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
+  lastData6=collect6();
+  const name=(lastData6['Preferred name']||lastData6['First name']||'agent');
+  document.getElementById('dn6').textContent=name;
+
+  // email fallback copy
+  let lines=['NEW AGENT CONTRACTING INFORMATION','=================================',''];
+  const order=['First name','Middle name','Last name','Preferred name','Date of birth','Email','Mobile phone',
+    'Street','City','State','ZIP','License status','Licensed','Resident state','NPN','Licensed states',
+    'Recruiting agent','Source'];
+  order.forEach(k=>{if(lastData6[k])lines.push(k+': '+lastData6[k]);});
+  lines.push('','Onboarding steps completed:');
+  STEPS.slice(0,5).forEach(id=>lines.push('  ['+(done[id]?'x':' ')+'] '+STEP_LABELS[id]));
+  const subject='Contracting Info — '+(lastData6['First name']||'')+' '+(lastData6['Last name']||'');
+  document.getElementById('emailbtn6').href=
+    'mailto:'+AGENCY_EMAIL+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(lines.join('\n'));
+
+  btn.disabled=true;btn.textContent='Submitting…';
+  let delivered=false;
+  try{
+    const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),12000);
+    const resp=await fetch(SUPA_URL+'/functions/v1/submit-form',{
+      method:'POST',signal:ctl.signal,
+      headers:{'Authorization':'Bearer '+SUPA_KEY,'apikey':SUPA_KEY,'content-type':'application/json'},
+      body:JSON.stringify({kind:'contracting',email:lastData6['Email']||'',name:name,
+        token:RTOKEN,prior_email:lastData6['Previous email']||'',
+        phone:lastData6['Mobile phone']||'',data:lastData6})
+    });
+    clearTimeout(t);
+    delivered=!!(resp&&resp.ok);
+  }catch(e){delivered=false;}
+
+  // Never claim it landed when it didn't — a silent failure here means their
+  // contracting details vanish and nobody finds out for weeks. If the send
+  // failed, say so plainly and push them at the email fallback instead.
+  const fail=document.getElementById('sendfail');
+  if(delivered){
+    fail.style.display='none';
+    markDone('contracting');
+  }else{
+    fail.style.display='flex';
+    document.getElementById('done6').classList.add('warn');
+  }
+  document.getElementById('form6').style.display='none';
+  document.getElementById('done6').classList.add('show');
+  document.getElementById('step6').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function downloadCopy6(){
+  if(!lastData6)return;
+  const blob=new Blob([JSON.stringify(lastData6,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='contracting-'+(lastData6['Last name']||'agent')+'.json';a.click();
+}
+
+/* ---------- "I've completed onboarding" ---------- */
 async function finishOnboarding(btn){
   const name=document.getElementById('ob_name').value.trim();
   const email=document.getElementById('ob_email').value.trim();
@@ -223,7 +708,7 @@ async function finishOnboarding(btn){
     await fetch(SUPA_URL+'/functions/v1/submit-form',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SUPA_KEY,'apikey':SUPA_KEY,'content-type':'application/json'},
-      body:JSON.stringify({kind:'onboarding',email:email,name:name,data:data})
+      body:JSON.stringify({kind:'onboarding',email:email,name:name,token:RTOKEN,data:data})
     });
     msg.style.color='#7ee6b0';msg.textContent='✓ Thanks '+name.split(' ')[0]+'! Your agency has been notified.';
     btn.textContent='Submitted ✓';
@@ -232,15 +717,17 @@ async function finishOnboarding(btn){
     btn.disabled=false;btn.textContent=orig;
   }
 }
+
+/* ---------- progress ---------- */
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==='object')return d;}catch(e){}return {};}
 function save(){localStorage.setItem(KEY,JSON.stringify(done));}
 function copyEventCode(){
   const code='Colburn0706', chip=document.getElementById('codechip'), lbl=chip.querySelector('.cc-label');
-  const done=()=>{chip.classList.add('copied');lbl.textContent='✓ Copied!';
+  const flash=()=>{chip.classList.add('copied');lbl.textContent='✓ Copied!';
     setTimeout(()=>{chip.classList.remove('copied');lbl.textContent='📋 Copy code';},2000);};
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(code).then(done).catch(()=>fallbackCopy(code,done));
-  } else fallbackCopy(code,done);
+    navigator.clipboard.writeText(code).then(flash).catch(()=>fallbackCopy(code,flash));
+  } else fallbackCopy(code,flash);
 }
 function fallbackCopy(text,cb){
   const t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';
@@ -253,6 +740,7 @@ function render(){
   let n=0;
   STEPS.forEach(id=>{
     const el=document.querySelector(`.step[data-step="${id}"]`);
+    if(!el)return;
     if(done[id]){el.classList.add('done');n++;}else el.classList.remove('done');
   });
   const pct=Math.round(n/STEPS.length*100);
@@ -262,6 +750,11 @@ function render(){
     (n===STEPS.length?" — you're all set! 🎉":'');
 }
 render();
+// deep link: onboarding.html#contracting opens Step 6 straight away
+if(location.hash==='#contracting'||location.hash==='#step6'){
+  openStep6();
+  setTimeout(()=>document.getElementById('step6').scrollIntoView({behavior:'smooth',block:'start'}),120);
+}
 </script>
 </body>
 </html>

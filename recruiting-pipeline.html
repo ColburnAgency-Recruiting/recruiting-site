@@ -176,8 +176,8 @@
     <input id="search" class="search" placeholder="Search recruits…" oninput="render()" />
     <button class="btn-gold" onclick="openAdd()">+ Add Recruit</button>
     <button class="btn-ghost admin-only" onclick="openSync()">⟳ Sync Licensing</button>
-    <a class="btn-ghost" href="contracting-intake.html" target="_blank" style="text-decoration:none">Contracting Form ↗</a>
-    <a class="btn-ghost" href="onboarding.html" target="_blank" style="text-decoration:none">Onboarding ↗</a>
+    <button class="btn-ghost admin-only" id="unmatchedBtn" onclick="openUnmatched()">📥 Unmatched Forms</button>
+    <a class="btn-ghost" href="onboarding.html" target="_blank" rel="noopener" style="text-decoration:none">Onboarding ↗</a>
     <a class="btn-ghost" href="https://tracker.colburnfinancial.com/" target="_blank" style="text-decoration:none">Agency Tracker ↗</a>
     <button class="btn-ghost admin-only" onclick="openSettings()">⚙ Settings</button>
     <button class="btn-ghost admin-only" onclick="openStages()">⚙ Stages</button>
@@ -258,6 +258,7 @@
     </div>
     <div class="mfoot">
       <button class="btn-del" id="delbtn" onclick="delRecruit()">Delete</button>
+      <button class="btn-ghost" id="linkbtn" style="background:#eef2f7;color:var(--navy3)" onclick="copyOnboardingLink(this)" title="Their personal onboarding link — the form they submit comes back tied to this record">🔗 Copy onboarding link</button>
       <button class="btn-ghost" id="resendbtn" style="background:#eef2f7;color:var(--navy3)" onclick="resendStageEmail(editingId,this)">📧 Resend email</button>
       <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeModal()">Cancel</button>
       <button class="btn-navy" onclick="saveRecruit()">Save</button>
@@ -334,6 +335,48 @@
   .drip-row input.drip-sub{width:100%;box-sizing:border-box;margin-bottom:6px}
   .drip-lbl{font-size:11px;color:var(--muted)}
   .drip-del{margin-left:auto;background:#fdecec;color:#b3261e;border:none;border-radius:7px;padding:6px 10px;cursor:pointer}
+</style>
+
+<!-- Unmatched Forms modal (submissions that couldn't be tied to a recruit) -->
+<div class="scrim" id="unmScrim">
+  <div class="modal" style="width:820px;max-width:100%">
+    <h2>📥 Unmatched Forms <button class="x" onclick="closeUnmatched()">×</button></h2>
+    <div class="mbody" style="max-height:66vh;overflow:auto">
+      <p class="unm-intro">Forms submitted by someone we couldn't match to anyone on the board — usually
+        because they created a new business email and reached the form without their personal link.
+        Attach each one to the right recruit and it moves onto their record.</p>
+      <div id="unmBody">Loading…</div>
+    </div>
+    <div class="mfoot">
+      <span style="margin-right:auto;color:var(--muted);font-size:11.5px">Attaching also updates that recruit's
+        contact email to the business address on the form.</span>
+      <button class="btn-ghost" style="background:#eef2f7;color:var(--navy3)" onclick="closeUnmatched()">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .unm-intro{color:var(--muted);font-size:12.5px;margin:0 0 14px;line-height:1.5}
+  .unm-card{border:1px solid #e3e9f0;border-radius:11px;padding:13px 15px;margin-bottom:11px;background:#fafbfd}
+  .unm-top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:3px}
+  .unm-top b{font-size:14.5px;color:var(--navy)}
+  .unm-kind{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;
+    background:#e7f0fa;color:#274a73;padding:2px 8px;border-radius:20px}
+  .unm-when{margin-left:auto;font-size:11.5px;color:var(--muted)}
+  .unm-meta{font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:9px}
+  .unm-meta code{background:#eef2f7;padding:1px 6px;border-radius:5px;font-size:12px;color:var(--navy3)}
+  .unm-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .unm-act select{flex:1;min-width:210px;padding:7px 9px;border:1px solid #cdd7e3;border-radius:7px;font:inherit}
+  .unm-att{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:8px 14px;
+    font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .unm-att:disabled{opacity:.6;cursor:default}
+  .unm-det{margin-top:9px;font-size:12.5px}
+  .unm-det summary{cursor:pointer;color:var(--navy3);font-weight:700}
+  .unm-row{display:flex;gap:10px;padding:3px 0;border-bottom:1px solid #eef2f7}
+  .unm-row span:first-child{color:var(--muted);min-width:150px}
+  .unm-msg{font-size:12.5px;font-weight:700;margin-top:7px}
+  .unm-badge{background:#c5544c;color:#fff;border-radius:20px;padding:1px 7px;font-size:10.5px;
+    font-weight:800;margin-left:5px}
 </style>
 
 <!-- Team Editor modal (recruiters + their reply emails) -->
@@ -989,6 +1032,7 @@ function openAdd(stage){
   document.getElementById('mtitle').firstChild.textContent='Add Recruit ';
   document.getElementById('delbtn').style.display='none';
   document.getElementById('resendbtn').style.display='none';
+  document.getElementById('linkbtn').style.display='none';   // no id to link to yet
   f('name','');f('phone','');f('email','');
   fillSelect(document.getElementById('f_source'),SOURCES,SOURCES[0]);
   fillRecruiterSelect(document.getElementById('f_recruiter'),filterRecruiter||RECRUITERS[0]||'');
@@ -1009,6 +1053,7 @@ function openEdit(id){
   document.getElementById('mtitle').firstChild.textContent='Edit Recruit ';
   document.getElementById('delbtn').style.display='';
   document.getElementById('resendbtn').style.display='';
+  document.getElementById('linkbtn').style.display='';
   f('name',r.name);f('phone',r.phone);f('email',r.email);
   fillSelect(document.getElementById('f_source'),SOURCES,r.source||'Other');
   fillRecruiterSelect(document.getElementById('f_recruiter'),r.recruiter||'');
@@ -1027,6 +1072,142 @@ function openEdit(id){
   loadRecruitForms(r);
   document.getElementById('scrim').classList.add('open');
 }
+/* ---------- Personal onboarding link ----------
+   Onboarding asks every recruit to create a NEW business email, so the address
+   they put on the form won't match what's on their pipeline card. This link
+   carries their recruit id, which is how the submission finds its way home.
+   Send this — not the bare onboarding.html — whenever you share the form. */
+function onboardingLink(id, hash){
+  const base=location.origin+location.pathname.replace(/[^/]*$/,'')+'onboarding.html';
+  return base+'?r='+id+(hash||'');
+}
+function copyOnboardingLink(btn){
+  if(!editingId){return;}
+  const url=onboardingLink(editingId);
+  const orig=btn.textContent;
+  const flash=(msg)=>{btn.textContent=msg;setTimeout(()=>{btn.textContent=orig;},2200);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(()=>flash('✓ Link copied'))
+      .catch(()=>{window.prompt('Copy this link:',url);flash('✓ Copied');});
+  } else { window.prompt('Copy this link:',url); flash('✓ Copied'); }
+}
+
+/* ---------- Unmatched form submissions ----------
+   Anything submit-form couldn't tie to a recruit by link token, previous email,
+   submitted email, or phone. Without this screen those submissions are invisible
+   — a row in a table and a Slack message that scrolls away. */
+let _unm=[];
+async function openUnmatched(){
+  document.getElementById('unmScrim').classList.add('open');
+  const box=document.getElementById('unmBody');
+  box.innerHTML='Loading…';
+  try{
+    const {data,error}=await SB.from('form_submissions')
+      .select('id,kind,name,email,prior_email,phone,data,created_at')
+      .is('recruit_id',null).is('resolved_at',null)
+      .order('created_at',{ascending:false});
+    if(error){box.innerHTML='<p style="color:var(--muted)">Could not load submissions. If this persists, check that form-matching.sql has been run.</p>';return;}
+    _unm=data||[];
+    renderUnmatched();
+  }catch(e){box.innerHTML='<p style="color:var(--muted)">Could not load submissions.</p>';}
+}
+function closeUnmatched(){document.getElementById('unmScrim').classList.remove('open');}
+
+function renderUnmatched(){
+  const box=document.getElementById('unmBody');
+  if(!_unm.length){
+    box.innerHTML='<p style="color:var(--muted)">Nothing waiting — every form has found its recruit. 🎉</p>';
+    return;
+  }
+  const opts=DATA.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''))
+    .map(r=>`<option value="${esc(r.id)}">${esc(r.name)}${r.email?' — '+esc(r.email):''}</option>`).join('');
+  box.innerHTML=_unm.map((f,i)=>{
+    const d=f.data||{};
+    const when=f.created_at?new Date(f.created_at).toLocaleString():'';
+    const rows=Object.keys(d).map(k=>
+      `<div class="unm-row"><span>${esc(k)}</span><span>${esc(String(d[k]))}</span></div>`).join('');
+    const bits=[];
+    if(f.email)bits.push('Business email: <code>'+esc(f.email)+'</code>');
+    if(f.prior_email)bits.push('Previous email given: <code>'+esc(f.prior_email)+'</code>');
+    if(f.phone)bits.push('Phone: <code>'+esc(f.phone)+'</code>');
+    if(d['Recruiting agent'])bits.push('Says their recruiter is <b>'+esc(String(d['Recruiting agent']))+'</b>');
+    return `<div class="unm-card" id="unm_${esc(f.id)}">
+      <div class="unm-top"><b>${esc(f.name||'(no name given)')}</b>
+        <span class="unm-kind">${f.kind==='contracting'?'Contracting':'Onboarding'}</span>
+        <span class="unm-when">${when}</span></div>
+      <div class="unm-meta">${bits.join('<br>')||'No contact details given.'}</div>
+      <div class="unm-act">
+        <select id="unmsel_${i}"><option value="">Attach to which recruit…</option>${opts}</select>
+        <button class="unm-att" onclick="attachSubmission(${i},this)">Attach</button>
+      </div>
+      <div class="unm-msg" id="unmmsg_${i}"></div>
+      <details class="unm-det"><summary>See everything they submitted</summary>${rows||'<i>No fields</i>'}</details>
+    </div>`;
+  }).join('');
+}
+
+async function attachSubmission(i,btn){
+  const f=_unm[i]; if(!f)return;
+  const sel=document.getElementById('unmsel_'+i);
+  const msg=document.getElementById('unmmsg_'+i);
+  const rid=sel.value;
+  if(!rid){msg.style.color='#c5544c';msg.textContent='Pick a recruit first.';return;}
+  const rec=DATA.find(x=>x.id===rid);
+  const orig=btn.textContent;btn.disabled=true;btn.textContent='Attaching…';msg.textContent='';
+  try{
+    // 1) tie the submission to the recruit and stamp it resolved
+    const up=await SB.from('form_submissions')
+      .update({recruit_id:rid,match_method:'manual',resolved_at:new Date().toISOString()})
+      .eq('id',f.id);
+    if(up.error)throw up.error;
+
+    // 2) move the recruit onto the business email + leave a trail on the timeline
+    const notes=[];
+    const oldEmail=(rec&&rec.email||'').trim();
+    const patch={};
+    if(f.email&&f.email.toLowerCase()!==oldEmail.toLowerCase()){
+      patch.email=f.email;
+      notes.push(oldEmail
+        ? 'Contact email changed to '+f.email+' (was '+oldEmail+') — new Symmetry business address'
+        : 'Contact email set to '+f.email+' — new Symmetry business address');
+    }
+    notes.push('Attached a '+(f.kind==='contracting'?'Contracting':'Onboarding')+' form that arrived unmatched');
+    const log=(rec&&Array.isArray(rec.log)?rec.log.slice():[]);
+    notes.forEach(x=>log.unshift({t:'note',x:x,d:Date.now()}));
+    patch.log=log;
+    const pr=await SB.from('recruits').update(patch).eq('id',rid);
+    if(pr.error)throw pr.error;
+
+    // 3) reflect it locally so the board is right without a reload
+    if(rec){ if(patch.email)rec.email=patch.email; rec.log=log; }
+    msg.style.color='#2e9e6b';
+    msg.textContent='✓ Attached to '+((rec&&rec.name)||'recruit')+
+      (patch.email?' and their contact email was updated.':'.');
+    btn.textContent='Attached ✓';
+    setTimeout(()=>{
+      _unm.splice(i,1);
+      renderUnmatched();
+      updateUnmatchedBadge();
+      if(typeof render==='function')render();
+    },1400);
+  }catch(e){
+    msg.style.color='#c5544c';
+    msg.textContent='Could not attach — '+((e&&e.message)||'please try again.');
+    btn.disabled=false;btn.textContent=orig;
+  }
+}
+
+// Count on the header button, so an orphaned form is noticed without opening it.
+async function updateUnmatchedBadge(){
+  const btn=document.getElementById('unmatchedBtn'); if(!btn)return;
+  try{
+    const {count,error}=await SB.from('form_submissions')
+      .select('id',{count:'exact',head:true}).is('recruit_id',null).is('resolved_at',null);
+    if(error)return;
+    btn.innerHTML='📥 Unmatched Forms'+(count?'<span class="unm-badge">'+count+'</span>':'');
+  }catch(e){/* non-critical */}
+}
+
 /* ---------- Per-recruit submitted forms (Onboarding / Contracting) ---------- */
 async function loadRecruitForms(r){
   const box=document.getElementById('formsbox');
@@ -1164,6 +1345,7 @@ async function showApp(){
   await loadTeam();populateRecFilter();
   await loadStages();fillStageSelect();
   await loadDB();
+  if(MY_ROLE==='admin')updateUnmatchedBadge();
 }
 function applyRole(){
   const admin=(MY_ROLE==='admin');
