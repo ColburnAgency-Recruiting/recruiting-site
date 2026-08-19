@@ -608,12 +608,49 @@ async function loadDB(){
   if(error){alert('Could not load recruits: '+error.message);return;}
   DATA=(data||[]).map(fromRow);render();
 }
+/* Live message copy from the ⚙ Settings panel (messages table).
+   The hardcoded TEMPLATES object below stays as the offline fallback, but when
+   the database is reachable the Call/Text/Email buttons quote the SAME words
+   the automated emails send -- so a recruit is never told two different things
+   about the same step. */
+let MSGS={};
+async function loadTemplates(){
+  try{
+    const {data}=await SB.from('messages').select('stage,channel,subject,body,enabled').eq('channel','email');
+    (data||[]).forEach(m=>{ if(m.enabled!==false&&(m.body||'').trim()) MSGS[m.stage]={subject:m.subject||'',body:m.body}; });
+  }catch(e){ console.warn('Message copy fell back to built-in templates',e); }
+}
+
+/* ---------- Recruiting-form links in MANUALLY sent messages ----------
+   Mirrors renderLinks() in the send-email / daily-scheduler Edge Functions.
+   Keep the three in step: phase2-backend/functions/_shared-links.ts is canonical. */
+const CF_FORM_LINK=/(https?:\/\/)?recruiting\.colburnfinancial\.com\/(onboarding|contracting-intake)(\.html)?([^\s<>"')]*)/gi;
+function cfNormalize(t){ if(!t)return t;
+  return t.replace(CF_FORM_LINK,(_m,sch,page,_h,rest)=>{
+    const s=sch||'https://';
+    if(String(page).toLowerCase()==='contracting-intake'){
+      const q=String(rest||'').split('#')[0];
+      return `${s}recruiting.colburnfinancial.com/onboarding.html${q}#contracting`;
+    }
+    return `${s}recruiting.colburnfinancial.com/onboarding.html${rest||''}`;
+  });}
+function cfPersonalize(t,id){ if(!t||!id)return t;
+  return t.replace(CF_FORM_LINK,m=>{
+    if(/[?&]r=/.test(m))return m;
+    const tail=(m.match(/[.,;:!?)\]]+$/)||[''])[0];
+    const url=tail?m.slice(0,-tail.length):m;
+    const h=url.indexOf('#'), base=h===-1?url:url.slice(0,h), frag=h===-1?'':url.slice(h);
+    return base+(base.includes('?')?'&':'?')+'r='+id+frag+tail;
+  });}
+function cfLinks(t,id){ return cfPersonalize(cfNormalize(t||''),id||''); }
+
 /* Load the pipeline columns from the stages table (falls back to the defaults above) */
 async function loadStages(){
   try{
     const {data}=await SB.from('stages').select('*').eq('active',true).order('position',{ascending:true});
     if(data&&data.length) STAGES=data.map(s=>({id:s.id,name:s.name,color:s.color||'#5b8fd6',is_licensing:s.is_licensing}));
   }catch(e){ console.warn('Stage load fell back to defaults',e); }
+  await loadTemplates();
 }
 function isLic(id){const s=STAGES.find(x=>x.id===id);return s?!!s.is_licensing:(id==='licensing');}
 /* Fire stage triggers: recruiter Slack alert + agent email (non-blocking — never interrupts the user) */
@@ -1282,13 +1319,27 @@ async function applySync(){
 })();
 
 /* ---------- Message links ---------- */
+/* Text stays short-form, so it keeps its own copy below -- but its links are
+   normalized and personalized, and it signs with the ASSIGNED recruiter rather
+   than a hardcoded name. */
 function smsLink(r){const t=TEMPLATES[r.stage]||TEMPLATES.interview;
-  const msg=t.text.replace(/{{name}}/g,firstName(r.name));
+  const msg=cfLinks(t.text.replace(/{{name}}/g,firstName(r.name)),r.id);
   return `sms:${(r.phone||'').replace(/\D/g,'')}?&body=${encodeURIComponent(msg)}`;}
-function mailLink(r){const t=TEMPLATES[r.stage]||TEMPLATES.interview;
-  const sub=t.subject.replace(/{{name}}/g,firstName(r.name));
-  const body=t.body.replace(/{{name}}/g,firstName(r.name));
-  return `mailto:${r.email}?subject=${encodeURIComponent(sub)}&body=${body}`;}
+
+/* Email button: prefer the live ⚙ Settings copy for this stage so the button
+   and the automated email are the same message. Falls back to the built-in
+   template only when the database could not be read. */
+function mailLink(r){
+  const live=MSGS[r.stage];
+  const t=live||TEMPLATES[r.stage]||TEMPLATES.interview;
+  const nm=firstName(r.name);
+  const sub=(t.subject||'').replace(/{{name}}/g,nm);
+  let body=(t.body||'').replace(/{{name}}/g,nm);
+  if(live) body=body.replace(/\r?\n/g,'\r\n');   /* built-ins are pre-encoded; live copy is plain text */
+  body=cfLinks(body,r.id);
+  const who=(r.recruiter||'').trim();
+  if(live) body+= (body.endsWith('\r\n')?'':'\r\n\r\n')+'— '+(who||'Mike Colburn')+'\r\nColburn Agency';
+  return `mailto:${r.email}?subject=${encodeURIComponent(sub)}&body=${live?encodeURIComponent(body):body}`;}
 
 /* ---------- Lists (sources, recruiters) ---------- */
 function fillSelect(el,list,val){
@@ -1568,7 +1619,7 @@ function renderFormCard(f){
   return `<details class="ff-card"><summary>${label} — ${esc(f.name||f.email||'')}<span class="ff-when">${when}</span></summary><div class="ff-body">${rows||'<i>No fields</i>'}</div></details>`;
 }
 function renderTmpl(stage){
-  const t=TEMPLATES[stage]||TEMPLATES.interview;
+  const t=MSGS[stage]?{text:MSGS[stage].body}:(TEMPLATES[stage]||TEMPLATES.interview);
   const nm=firstName(document.getElementById('f_name').value||'there');
   document.getElementById('tmplbox').innerHTML=
     `<p>📨 <b>${STAGES.find(s=>s.id===stage).name}</b> message template (opens your messaging app):</p>
