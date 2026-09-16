@@ -180,6 +180,26 @@
         <button class="btn-navy" style="flex:1" onclick="doLogin()">Sign in</button>
         <button class="btn-ghost" style="flex:1;background:#eef2f7;color:var(--navy3)" onclick="doSignup()">Create account</button>
       </div>
+      <div style="text-align:center;margin-top:12px">
+        <a href="#" id="li_forgot" onclick="doForgot();return false" style="font-size:12.5px;color:var(--navy3)">Forgot password?</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New-password panel: shown only when the user arrives from a reset-password email -->
+<div class="scrim" id="resetScrim" style="display:none">
+  <div class="modal" style="width:380px">
+    <h2 style="border:none">Colburn Agency — Set a new password</h2>
+    <div class="mbody">
+      <p style="margin:0 0 12px;color:var(--muted);font-size:13px">Choose a new password for <b id="rp_who"></b>. You'll be signed in as soon as it's saved.</p>
+      <label>New password</label><input id="rp_pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
+      <label>Confirm new password</label><input id="rp_pass2" type="password" placeholder="Type it again" autocomplete="new-password" />
+      <div id="rp_msg" style="font-size:12.5px;margin-top:8px;min-height:16px;color:var(--muted)"></div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn-navy" style="flex:1" onclick="doSetNewPassword()">Save new password</button>
+        <button class="btn-ghost" style="flex:1;background:#eef2f7;color:var(--navy3)" onclick="cancelReset()">Cancel</button>
+      </div>
     </div>
   </div>
 </div>
@@ -571,6 +591,13 @@ const DEFAULT_RECRUITERS=[]; // recruiters come from the Team table (⚙ Team), 
 /* ---------- State + Supabase (shared database) ---------- */
 const SUPA_URL='https://vrtnbucwukxdkiisndnk.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZydG5idWN3dWt4ZGtpaXNuZG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjQ5MTcsImV4cCI6MjA5NzkwMDkxN30.hjdRPeWHvTT27sCIZMhfgLuuntPloDoK8Cm2EPRFl2w';
+/* Password-reset links land here with #type=recovery (or ?type=recovery), or
+   with #error=... if the link expired. Read that before the client is built,
+   because supabase-js processes the hash during createClient(). */
+const AUTH_URL_STATE=(()=>{
+  const p=new URLSearchParams((location.hash||'').replace(/^#/,'')+'&'+(location.search||'').replace(/^\?/,''));
+  return {recovery:p.get('type')==='recovery', error:p.get('error_description')||p.get('error')||''};
+})();
 const SB=window.supabase.createClient(SUPA_URL,SUPA_KEY);
 
 const SKEY='cf_sources_v1', RKEY='cf_recruiters_v1';
@@ -1706,18 +1733,77 @@ function importData(e){const file=e.target.files[0];if(!file)return;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
 /* ---------- Auth ---------- */
+let RESETTING=false;   // true while the new-password panel is up
 async function initAuth(){
   const {data:{session}}=await SB.auth.getSession();
-  if(session) showApp(); else showLogin();
-  SB.auth.onAuthStateChange((_e,s)=>{ if(s) showApp(); else showLogin(); });
+  if(AUTH_URL_STATE.recovery&&session){ showReset(session); }
+  else if(session) showApp();
+  else{
+    showLogin();
+    if(AUTH_URL_STATE.error||AUTH_URL_STATE.recovery){
+      const msg=document.getElementById('li_msg'); msg.style.color='var(--bad)';
+      msg.textContent='That password-reset link has expired or was already used. Enter your email and click "Forgot password?" to get a new one.';
+      clearAuthHash();
+    }
+  }
+  SB.auth.onAuthStateChange((e,s)=>{
+    if(e==='PASSWORD_RECOVERY'){ showReset(s); return; }
+    if(RESETTING) return;             // don't flip to the app mid-reset
+    if(s) showApp(); else showLogin();
+  });
 }
+function clearAuthHash(){ try{history.replaceState(null,'',location.pathname+location.search);}catch(e){} }
 function showLogin(){
   document.getElementById('loginScrim').style.display='flex';
+  document.getElementById('resetScrim').style.display='none';
   document.getElementById('appwrap').style.display='none';
+}
+function showReset(session){
+  RESETTING=true;
+  document.getElementById('rp_who').textContent=(session&&session.user&&session.user.email)||'your account';
+  document.getElementById('rp_pass').value='';document.getElementById('rp_pass2').value='';
+  const m=document.getElementById('rp_msg'); m.style.color='var(--muted)'; m.textContent='';
+  document.getElementById('loginScrim').style.display='none';
+  document.getElementById('appwrap').style.display='none';
+  document.getElementById('resetScrim').style.display='flex';
+  setTimeout(()=>document.getElementById('rp_pass').focus(),50);
+}
+/* "Forgot password?" — Supabase emails a one-time link that returns to this page. */
+async function doForgot(){
+  const email=document.getElementById('li_email').value.trim();
+  const msg=document.getElementById('li_msg');
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    msg.style.color='var(--bad)';msg.textContent='Enter your login email above first, then click "Forgot password?".';
+    document.getElementById('li_email').focus();return;
+  }
+  msg.style.color='var(--muted)';msg.textContent='Sending reset email…';
+  const redirectTo=location.origin+location.pathname;
+  const {error}=await SB.auth.resetPasswordForEmail(email,{redirectTo});
+  if(error){msg.style.color='var(--bad)';msg.textContent=error.message;return;}
+  msg.style.color='var(--good)';
+  msg.textContent='Check '+email+' for a reset link (look in spam if it does not arrive in a couple of minutes). The link brings you back here to choose a new password.';
+}
+async function doSetNewPassword(){
+  const p1=document.getElementById('rp_pass').value, p2=document.getElementById('rp_pass2').value;
+  const msg=document.getElementById('rp_msg');
+  if(p1.length<6){msg.style.color='var(--bad)';msg.textContent='Password must be at least 6 characters.';return;}
+  if(p1!==p2){msg.style.color='var(--bad)';msg.textContent='The two passwords do not match.';return;}
+  msg.style.color='var(--muted)';msg.textContent='Saving…';
+  const {error}=await SB.auth.updateUser({password:p1});
+  if(error){msg.style.color='var(--bad)';msg.textContent=error.message;return;}
+  msg.style.color='var(--good)';msg.textContent='Password updated — signing you in…';
+  clearAuthHash(); RESETTING=false;
+  setTimeout(showApp,600);
+}
+async function cancelReset(){
+  RESETTING=false; clearAuthHash();
+  try{await SB.auth.signOut();}catch(e){}
+  showLogin();
 }
 let MY_ROLE='recruiter', MY_NAME='';
 async function showApp(){
   document.getElementById('loginScrim').style.display='none';
+  document.getElementById('resetScrim').style.display='none';
   document.getElementById('appwrap').style.display='flex';
   let email='';
   try{const {data:{user}}=await SB.auth.getUser(); email=user?user.email:''; document.getElementById('whoami').textContent=email;}catch(e){}
