@@ -9,12 +9,14 @@
   :root { --navy:#1F3864; --ink:#1f2937; --muted:#6b7280; }
   body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
          background:#f6f8fb; color:var(--ink); margin:0; padding:48px 16px; }
-  .card { max-width:560px; margin:0 auto; background:#fff; border-radius:14px; padding:32px 28px;
+  .card { max-width:680px; margin:0 auto; background:#fff; border-radius:14px; padding:32px 28px;
           box-shadow:0 2px 14px rgba(16,32,64,.08); }
   h1 { color:var(--navy); font-size:22px; margin:0 0 14px; }
   p { line-height:1.6; margin:0 0 14px; }
   a.btn { display:inline-block; margin-top:6px; padding:11px 18px; border-radius:8px; background:var(--navy);
           color:#fff; text-decoration:none; font-weight:600; }
+  .cal { margin:18px 0 6px; min-width:320px; height:700px; }
+  @media (max-width:520px){ .cal { height:820px; } }
   .foot { margin-top:22px; padding-top:14px; border-top:1px solid #e5e7eb; font-size:13px; color:var(--muted); }
 </style>
 </head>
@@ -27,13 +29,14 @@
   </div>
 <script>
   var OVERVIEW = "https://overview.colburnfinancial.com/";
+  var CALENDLY = "https://calendly.com/d/cx2s-823-hs9/interview-with-the-colburn-agency";
   var a = (new URLSearchParams(location.search).get("a") || "").toLowerCase();
   var copy = {
-    interested: ["Thanks — I'll be in touch",
-      "<p>Thanks for raising your hand. I'll reach out personally, usually within a business day.</p>" +
-      "<p>If you'd rather pick a time yourself, you can do that right here:</p>" +
-      "<p><a class='btn' href='" + OVERVIEW + "'>Pick a time with Mike</a></p>" +
-      "<p>You won't get any more emails from this sequence. &mdash; Mike</p>"],
+    interested: ["Thanks — let's find a time",
+      "<p>Thanks for raising your hand. Pick whatever time works for you below and we'll talk then.</p>" +
+      "<div class='cal calendly-inline-widget' data-url='" + CALENDLY + "'></div>" +
+      "<p>Nothing on the calendar that works? Just reply to my email and we'll sort something out. " +
+      "Either way, you won't get any more emails from this sequence. &mdash; Mike</p>"],
     later6: ["Got it — let's talk in six months",
       "<p>No problem at all. I'll leave you alone and check back in about six months.</p>" +
       "<p>If something changes before then, just reply to my email. &mdash; Mike</p>"],
@@ -47,6 +50,12 @@
   document.getElementById("t").textContent = c[0];
   document.getElementById("m").innerHTML = c[1];
   document.title = c[0] + " — Colburn Agency";
+  if (a === "interested") {
+    var sc = document.createElement("script");
+    sc.src = "https://assets.calendly.com/assets/external/widget.js";
+    sc.async = true;
+    document.body.appendChild(sc);
+  }
 </script>
 </body>
 </html>
