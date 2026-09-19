@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Colburn Agency</title>
+<style>
+  :root { --navy:#1F3864; --ink:#1f2937; --muted:#6b7280; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         background:#f6f8fb; color:var(--ink); margin:0; padding:48px 16px; }
+  .card { max-width:560px; margin:0 auto; background:#fff; border-radius:14px; padding:32px 28px;
+          box-shadow:0 2px 14px rgba(16,32,64,.08); }
+  h1 { color:var(--navy); font-size:22px; margin:0 0 14px; }
+  p { line-height:1.6; margin:0 0 14px; }
+  a.btn { display:inline-block; margin-top:6px; padding:11px 18px; border-radius:8px; background:var(--navy);
+          color:#fff; text-decoration:none; font-weight:600; }
+  .foot { margin-top:22px; padding-top:14px; border-top:1px solid #e5e7eb; font-size:13px; color:var(--muted); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="t">Thanks</h1>
+    <div id="m"><p>Thanks for getting in touch.</p></div>
+    <div class="foot">Colburn Agency &middot; Symmetry Financial Group<br>
+      3608 N. Steele Blvd. Suite 103a, Fayetteville, AR 72703</div>
+  </div>
+<script>
+  var OVERVIEW = "https://overview.colburnfinancial.com/";
+  var a = (new URLSearchParams(location.search).get("a") || "").toLowerCase();
+  var copy = {
+    interested: ["Thanks — I'll be in touch",
+      "<p>Thanks for raising your hand. I'll reach out personally, usually within a business day.</p>" +
+      "<p>If you'd rather pick a time yourself, you can do that right here:</p>" +
+      "<p><a class='btn' href='" + OVERVIEW + "'>Pick a time with Mike</a></p>" +
+      "<p>You won't get any more emails from this sequence. &mdash; Mike</p>"],
+    later6: ["Got it — let's talk in six months",
+      "<p>No problem at all. I'll leave you alone and check back in about six months.</p>" +
+      "<p>If something changes before then, just reply to my email. &mdash; Mike</p>"],
+    unsub: ["You're unsubscribed",
+      "<p>You've been removed and won't hear from me again.</p>" +
+      "<p>Sorry for the interruption, and all the best. &mdash; Mike</p>"],
+    error: ["Link not recognised",
+      "<p>That link has expired or isn't valid any more. Reply to my email and I'll sort it out. &mdash; Mike</p>"]
+  };
+  var c = copy[a] || copy.error;
+  document.getElementById("t").textContent = c[0];
+  document.getElementById("m").innerHTML = c[1];
+  document.title = c[0] + " — Colburn Agency";
+</script>
+</body>
+</html>
