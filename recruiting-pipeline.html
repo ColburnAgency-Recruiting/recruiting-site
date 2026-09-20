@@ -150,6 +150,7 @@
   .log-item .tg{font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;text-transform:uppercase}
   .tg-call{background:#e7edf5;color:#42597a}.tg-text{background:#dff1e8;color:#1d7a4f}
   .tg-email{background:#efe6f7;color:#6a3f9a}.tg-note{background:#f1f4f8;color:#6b7c8f}
+  .tg-stage{background:#e6eefc;color:#2f5aa8}.tg-system{background:#f1f4f8;color:#6b7c8f}
   .log-item .dt{font-size:10.5px;color:var(--muted);margin-left:auto}
   .log-empty{padding:12px;text-align:center;color:var(--muted);font-size:12px}
   .tmpl{background:#f6f8fb;border:1px solid var(--line);border-radius:9px;padding:11px;margin-top:6px}
@@ -233,7 +234,7 @@
 
 <div class="statbar" id="statbar"></div>
 <div class="hint">✅ Connected to your shared Colburn Agency database — your whole team sees the same board, live. Texts/emails still open your own messaging app with a pre-written message (automated 2-way texting comes with the A2P step).
-  <span style="margin-left:10px;white-space:nowrap">Card dot: <b style="color:#1d9d5b">●</b> email sent &nbsp; <b style="color:#e3b341">●</b> not sent yet &nbsp; <b style="color:#d9433b">●</b> send failed</span></div>
+  <span style="margin-left:10px;white-space:nowrap">Card dot: <b style="color:#1d9d5b">●</b> email sent &nbsp; <b style="color:#e3b341">●</b> not sent yet &nbsp; <b style="color:#d9433b">●</b> send failed &nbsp; <b style="color:#c9d4e0">●</b> no record</span></div>
 <div class="board" id="board"></div>
 </div><!-- /appwrap -->
 
@@ -697,7 +698,7 @@ async function notifySlack(event,recruit,stage){
     // purely by the recruit's actual stage (stKey), so a recruit added straight into
     // any stage gets THAT stage's email — never a stage assumed from the event type.
     const {data,error}=await SB.functions.invoke('send-email',{body:{
-      recruit:{name:recruit.name,email:recruit.email,recruiter_name:recruit.recruiter,stage:stKey},stage:stKey}});
+      recruit:{id:recruit.id,name:recruit.name,email:recruit.email,recruiter_name:recruit.recruiter,stage:stKey},stage:stKey}});
     if(error)light='failed';
     else{const s=data&&data.status;light=(s==='sent')?'sent':((s==='failed')?'failed':'pending');}
   }catch(e){light='failed';console.warn('Email send skipped',e);}
@@ -721,7 +722,7 @@ async function resendStageEmail(id, btn){
   let light='pending', msg='';
   try{
     const {data,error}=await SB.functions.invoke('send-email',{body:{
-      recruit:{name:r.name,email:r.email,recruiter_name:r.recruiter},stage:r.stage}});
+      recruit:{id:r.id,name:r.name,email:r.email,recruiter_name:r.recruiter},stage:r.stage}});
     const s=(!error&&data)?data.status:'failed';
     if(s==='sent'){light='sent';msg='✓ Email sent to '+r.name+'.';}
     else if(s==='no_template'){light='pending';msg='No email is set up for this stage. Add one in ⚙ Settings.';}
@@ -748,6 +749,44 @@ function seed(){
 function firstName(n){return (n||'').trim().split(/\s+/)[0]||'there';}
 function fmtPhone(p){const d=(p||'').replace(/\D/g,'');return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:p;}
 function ago(ts){const d=Math.floor((Date.now()-ts)/864e5);if(d<=0)return'today';if(d===1)return'yesterday';if(d<7)return d+'d ago';return new Date(ts).toLocaleDateString();}
+/* ---- Recruit history (added 2026-09-20) --------------------------------
+   History gets written from both ends: notes typed in the drawer go on top,
+   entries written by send-email / stage-advance / daily-scheduler are appended
+   at the bottom, and the date arrives either as epoch milliseconds or as an ISO
+   string. Normalise both and sort newest-first so the timeline always reads in
+   order, whatever wrote it. */
+function histTime(e){const t=+new Date(e&&e.d);return isFinite(t)?t:0;}
+function histSorted(log){return (Array.isArray(log)?log.slice():[]).sort((a,b)=>histTime(b)-histTime(a));}
+function histLabel(e){
+  if(!e)return'Contact';
+  if(e.t==='email')return /FAILED/.test(e.x||'')?'Email failed':'Email sent';
+  if(e.t==='stage')return'Stage change';
+  if(e.t==='call')return'Call';
+  if(e.t==='text')return'Text';
+  if(e.t==='note')return'Note';
+  return'Contact';
+}
+/* The card's one-line summary: the most recent thing that actually happened.
+   Cards whose history predates tracking fall back to the stored contact date. */
+function lastEvent(r){
+  const L=histSorted(r&&r.log);
+  if(L.length&&histTime(L[0]))return histLabel(L[0])+' · '+ago(histTime(L[0]));
+  return'Last contact: '+(r&&r.last?ago(r.last):'—');
+}
+/* Opening a card copies its history; writing that copy straight back would
+   erase anything the automatic senders added in the meantime. Merge instead. */
+async function mergedLog(id,local){
+  const out=(local||[]).slice();
+  if(!id)return histSorted(out);
+  try{
+    const {data,error}=await SB.from('recruits').select('log').eq('id',id).single();
+    if(error||!data)return histSorted(out);
+    const key=e=>histTime(e)+'|'+(e&&e.t)+'|'+(e&&e.x);
+    const seen=new Set(out.map(key));
+    (Array.isArray(data.log)?data.log:[]).forEach(e=>{const k=key(e);if(!seen.has(k)){out.push(e);seen.add(k);}});
+  }catch(e){}
+  return histSorted(out);
+}
 
 function render(){
   const q=(document.getElementById('search').value||'').toLowerCase();
@@ -779,12 +818,12 @@ function cardEl(r){
   el.onclick=()=>openEdit(r.id);
   const tel=(r.phone||'').replace(/\D/g,'');
   const es=(r.stage_emails&&r.stage_emails[r.stage])?r.stage_emails[r.stage].status:'';
-  const dc=es==='sent'?'#1d9d5b':(es==='failed'?'#d9433b':'#e3b341');
-  const dt=es==='sent'?'Stage email sent':(es==='failed'?'Stage email failed to send — check this recruit\'s email address':'Stage email not sent yet');
+  const dc=es==='sent'?'#1d9d5b':(es==='failed'?'#d9433b':(es?'#e3b341':'#c9d4e0'));
+  const dt=es==='sent'?'Stage email sent':(es==='failed'?'Stage email failed to send — check this recruit\'s email address':(es?'Stage email not sent yet':'No send recorded — this card is older than email tracking'));
   el.innerHTML=`<span class="email-dot" style="background:${dc}" title="${dt} — click to resend" onclick="event.stopPropagation();resendStageEmail('${r.id}')"></span><div class="nm">${esc(r.name)}</div>
     <div class="meta">
       <span>${r.phone?fmtPhone(r.phone):'<i>no phone</i>'}</span>
-      <span>Last contact: ${r.last?ago(r.last):'—'}</span>
+      <span>${lastEvent(r)}</span>
     </div>
     <div class="badges">
       <span class="badge b-rec">👤 ${esc(r.recruiter||'Unassigned')}</span>
@@ -1665,8 +1704,9 @@ function addLog(){const x=document.getElementById('f_logtext').value.trim();if(!
   tmpLog.unshift({t:logType,x,d:Date.now()});document.getElementById('f_logtext').value='';renderLog();}
 function renderLog(){
   const el=document.getElementById('loglist');
-  if(!tmpLog.length){el.innerHTML='<div class="log-empty">No contact logged yet</div>';return;}
-  el.innerHTML=tmpLog.map(l=>`<div class="log-item"><div class="lh">
+  const _L=histSorted(tmpLog);
+  if(!_L.length){el.innerHTML='<div class="log-empty">No contact logged yet</div>';return;}
+  el.innerHTML=_L.map(l=>`<div class="log-item"><div class="lh">
     <span class="tg tg-${l.t}">${l.t}</span><span class="dt">${new Date(l.d).toLocaleString()}</span></div>
     <div>${esc(l.x)}</div></div>`).join('');
 }
@@ -1690,9 +1730,9 @@ async function saveRecruit(){
     license:document.getElementById('f_license').value,
     stage:document.getElementById('f_stage').value,
     notes:document.getElementById('f_notes').value.trim(),
-    log:tmpLog.slice()};
+    log:await mergedLog(editingId,tmpLog)};
   const prevStage=editingId?((DATA.find(x=>x.id===editingId)||{}).stage):null;
-  rec.last=tmpLog[0]?tmpLog[0].d:(editingId?((DATA.find(x=>x.id===editingId)||{}).last||Date.now()):Date.now());
+  rec.last=(rec.log[0]&&histTime(rec.log[0]))?histTime(rec.log[0]):(editingId?((DATA.find(x=>x.id===editingId)||{}).last||Date.now()):Date.now());
   if(editingId){
     const {error}=await SB.from('recruits').update(toRow(rec)).eq('id',editingId);
     if(error){alert('Save failed: '+error.message);return;}
